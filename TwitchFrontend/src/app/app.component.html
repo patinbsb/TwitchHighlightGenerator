@@ -6,7 +6,11 @@
   <img width="300" alt="Angular Logo" src="https://images.techhive.com/images/article/2014/08/twitch-logo-100368820-large.jpg">
 </div>
 <br>
+<mat-grid-list cols="2" rowHeight="fit" [style.height]="'100px'" [gutterSize]="'1px'" rowwidth="fit">
+    <mat-grid-tile [colspan]="1" [rowspan]="1"><input matInput placeholder="Please Enter a Twitch VOD link" value=""></mat-grid-tile>
+    <mat-grid-tile [colspan]="1" [rowspan]="1"><button mat-raised-button type="submit" (click)="onSubmit()">Submit link</button></mat-grid-tile>
+</mat-grid-list>
 <div style="text-align:center">
-    <input matInput placeholder="Please Enter a Twitch VOD link" value="" width="200px"><button mat-raised-button >Submit link</button>
+    
 </div>
 <router-outlet></router-outlet>
