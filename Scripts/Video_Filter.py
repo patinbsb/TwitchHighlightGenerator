@@ -11,7 +11,7 @@ and a new video output is started. This will segregate videos into separate matc
 '''
 
 
-def filter_video_by_template(video_to_process, filter_template='E:\\Twitch VODs\\template.png',
+def filter_video_by_template(video_to_process, filter_template='C:\\Twitch VODs\\template.png',
                              filter_threshold=0.70, starting_frame=1, frames_to_skip=15,
                              convert_to_greyscale=True, output_path='output.mp4', print_progress=True,
                              display_matched_frames=False, seconds_until_timeout=120, seconds_minimum_match_length=600
@@ -168,5 +168,5 @@ def write_highlight_or_match_audio_segment_to_file(filename, audio_frames):
 
 
 
-filter_video_by_template(video_to_process='E:\\Twitch VODs\\20181007_319583040_League of Legends.mp4',
+filter_video_by_template(video_to_process='C:\\Twitch VODs\\20181007_319583040_League of Legends.mp4',
                          filter_threshold=0.9, starting_frame=70000, convert_to_greyscale=False, frames_to_skip=15)
