@@ -51,7 +51,7 @@ def filter_video_by_template(video_to_process, filter_template='C:\\Twitch VODs\
 
     stopwatch_start = time.time()
     # A list of start and end frame tuples that will represent the audio sections to capture in a match/highlight
-    continuous_seconds = []
+    matched_ranges = []
     while cap.isOpened():
         ret, frame = cap.read()
         if ret is True and (current_frame % frames_to_skip == 0):
@@ -78,21 +78,21 @@ def filter_video_by_template(video_to_process, filter_template='C:\\Twitch VODs\
                     # We check if there is a skip in the matching.
                     if current_frame - previous_matched_frame != frames_to_skip \
                             and current_frame - previous_matched_frame != 0:
-                        continuous_seconds.append([convert_frame_to_seconds(audio_segment_start, fps),
+                        matched_ranges.append([convert_frame_to_seconds(audio_segment_start, fps),
                                                   convert_frame_to_seconds(previous_matched_frame, fps)])
                         audio_segment_start = current_frame
 
-                    # The render has discovered a highlight video (template match length < seconds_until_timeout)
+                    # The render has discovered a highlight video (template match length < seconds_minimum_match_length)
                     if current_frame - seconds_until_timeout * fps > previous_matched_frame \
-                            and previous_matched_frame - start_match_frame < seconds_until_timeout * fps:
+                            and matched_ranges_to_total_seconds(matched_ranges) < seconds_minimum_match_length:
                         # End current video
                         out.release()
                         # Rename output video to highlight + highlight_count
                         filename = 'highlight' + str(highlight_count)
                         os.rename(output_path, filename + '.mp4')
                         # Write out audio frames for future audio/video merging
-                        write_highlight_or_match_audio_segment_to_file(filename, continuous_seconds)
-                        continuous_seconds.clear()
+                        write_highlight_or_match_audio_segment_to_file(filename, matched_ranges)
+                        matched_ranges.clear()
                         if print_progress:
                             print(filename + ' video created')
                         highlight_count += 1
@@ -102,15 +102,15 @@ def filter_video_by_template(video_to_process, filter_template='C:\\Twitch VODs\
 
                     # The render has discovered a match video (template match length > seconds_minimum_match_length)
                     elif current_frame - seconds_until_timeout * fps > previous_matched_frame \
-                            and previous_matched_frame - start_match_frame > seconds_minimum_match_length * fps:
+                            and matched_ranges_to_total_seconds(matched_ranges) > seconds_minimum_match_length:
                         # End current video
                         out.release()
                         # Rename output video to match + match_count
                         filename = 'match' + str(match_count)
                         os.rename(output_path, filename + '.mp4')
                         # Write out audio frames for future audio/video merging
-                        write_highlight_or_match_audio_segment_to_file(filename, continuous_seconds)
-                        continuous_seconds.clear()
+                        write_highlight_or_match_audio_segment_to_file(filename, matched_ranges)
+                        matched_ranges.clear()
                         if print_progress:
                             print('match' + str(match_count) + ' video created')
                         match_count += 1
@@ -152,10 +152,10 @@ def filter_video_by_template(video_to_process, filter_template='C:\\Twitch VODs\
             filename = 'highlight' + str(highlight_count)
             os.rename(output_path, filename + '.mp4')
             # Write out audio frames for future audio/video merging
-            continuous_seconds.append([convert_frame_to_seconds(audio_segment_start, fps),
+            matched_ranges.append([convert_frame_to_seconds(audio_segment_start, fps),
                                       convert_frame_to_seconds(previous_matched_frame, fps)])
-            write_highlight_or_match_audio_segment_to_file(filename, continuous_seconds)
-            continuous_seconds.clear()
+            write_highlight_or_match_audio_segment_to_file(filename, matched_ranges)
+            matched_ranges.clear()
             if print_progress:
                 print(filename + ' video created')
     cv2.destroyAllWindows()
@@ -170,6 +170,12 @@ def write_highlight_or_match_audio_segment_to_file(filename, audio_seconds):
 
 def convert_frame_to_seconds(frame, fps):
     return frame / fps
+
+def matched_ranges_to_total_seconds(matched_ranges):
+    output = 0
+    for time_range in matched_ranges:
+        output += time_range[1] - time_range[0]
+    return output
 
 
 filter_video_by_template(video_to_process='C:\\Twitch VODs\\20181007_319583040_League of Legends.mp4',
