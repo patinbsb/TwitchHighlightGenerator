@@ -105,7 +105,7 @@ def filter_video_by_template(video_to_process, filter_template='C:\\Twitch VODs\
                         # End current video
                         out.release()
                         # Rename output video to match + match_count
-                        filename = 'match' + str(highlight_count)
+                        filename = 'match' + str(match_count)
                         os.rename(output_path, filename + '.mp4')
                         # Write out audio frames for future audio/video merging
                         write_highlight_or_match_audio_segment_to_file(filename, continuous_frames)
@@ -155,7 +155,7 @@ def filter_video_by_template(video_to_process, filter_template='C:\\Twitch VODs\
             write_highlight_or_match_audio_segment_to_file(filename, continuous_frames)
             continuous_frames.clear()
             if print_progress:
-                print('highlight' + str(highlight_count) + ' video created')
+                print(filename + ' video created')
     cv2.destroyAllWindows()
     return 0
 
