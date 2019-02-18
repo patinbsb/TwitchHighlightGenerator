@@ -51,7 +51,7 @@ def filter_video_by_template(video_to_process, filter_template='C:\\Twitch VODs\
 
     stopwatch_start = time.time()
     # A list of start and end frame tuples that will represent the audio sections to capture in a match/highlight
-    continuous_frames = []
+    continuous_seconds = []
     while cap.isOpened():
         ret, frame = cap.read()
         if ret is True and (current_frame % frames_to_skip == 0):
@@ -78,7 +78,8 @@ def filter_video_by_template(video_to_process, filter_template='C:\\Twitch VODs\
                     # We check if there is a skip in the matching.
                     if current_frame - previous_matched_frame != frames_to_skip \
                             and current_frame - previous_matched_frame != 0:
-                        continuous_frames.append([audio_segment_start, previous_matched_frame])
+                        continuous_seconds.append([convert_frame_to_seconds(audio_segment_start, fps),
+                                                  convert_frame_to_seconds(previous_matched_frame, fps)])
                         audio_segment_start = current_frame
 
                     # The render has discovered a highlight video (template match length < seconds_until_timeout)
@@ -90,8 +91,8 @@ def filter_video_by_template(video_to_process, filter_template='C:\\Twitch VODs\
                         filename = 'highlight' + str(highlight_count)
                         os.rename(output_path, filename + '.mp4')
                         # Write out audio frames for future audio/video merging
-                        write_highlight_or_match_audio_segment_to_file(filename, continuous_frames)
-                        continuous_frames.clear()
+                        write_highlight_or_match_audio_segment_to_file(filename, continuous_seconds)
+                        continuous_seconds.clear()
                         if print_progress:
                             print(filename + ' video created')
                         highlight_count += 1
@@ -108,8 +109,8 @@ def filter_video_by_template(video_to_process, filter_template='C:\\Twitch VODs\
                         filename = 'match' + str(match_count)
                         os.rename(output_path, filename + '.mp4')
                         # Write out audio frames for future audio/video merging
-                        write_highlight_or_match_audio_segment_to_file(filename, continuous_frames)
-                        continuous_frames.clear()
+                        write_highlight_or_match_audio_segment_to_file(filename, continuous_seconds)
+                        continuous_seconds.clear()
                         if print_progress:
                             print('match' + str(match_count) + ' video created')
                         match_count += 1
@@ -151,21 +152,23 @@ def filter_video_by_template(video_to_process, filter_template='C:\\Twitch VODs\
             filename = 'highlight' + str(highlight_count)
             os.rename(output_path, filename + '.mp4')
             # Write out audio frames for future audio/video merging
-            continuous_frames.append([audio_segment_start, previous_matched_frame])
-            write_highlight_or_match_audio_segment_to_file(filename, continuous_frames)
-            continuous_frames.clear()
+            continuous_seconds.append([convert_frame_to_seconds(audio_segment_start, fps),
+                                      convert_frame_to_seconds(previous_matched_frame, fps)])
+            write_highlight_or_match_audio_segment_to_file(filename, continuous_seconds)
+            continuous_seconds.clear()
             if print_progress:
                 print(filename + ' video created')
     cv2.destroyAllWindows()
     return 0
 
 
-def write_highlight_or_match_audio_segment_to_file(filename, audio_frames):
+def write_highlight_or_match_audio_segment_to_file(filename, audio_seconds):
     with open(filename + '.csv', 'w', newline='') as csvfile:
         writer = csv.writer(csvfile)
-        writer.writerows(audio_frames)
+        writer.writerows(audio_seconds)
 
-
+def convert_frame_to_seconds(frame, fps):
+    return frame / fps
 
 
 filter_video_by_template(video_to_process='C:\\Twitch VODs\\20181007_319583040_League of Legends.mp4',
