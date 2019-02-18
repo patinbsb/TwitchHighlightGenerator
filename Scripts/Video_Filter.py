@@ -169,4 +169,4 @@ def write_highlight_or_match_audio_segment_to_file(filename, audio_frames):
 
 
 filter_video_by_template(video_to_process='C:\\Twitch VODs\\20181007_319583040_League of Legends.mp4',
-                         filter_threshold=0.9, starting_frame=70000, convert_to_greyscale=False, frames_to_skip=15)
+                         filter_threshold=0.9, starting_frame=1, convert_to_greyscale=False, frames_to_skip=15)
