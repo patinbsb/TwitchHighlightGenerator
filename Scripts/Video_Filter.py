@@ -178,5 +178,5 @@ def matched_ranges_to_total_seconds(matched_ranges):
     return output
 
 
-filter_video_by_template(video_to_process='C:\\Twitch VODs\\20181007_319583040_League of Legends.mp4',
+filter_video_by_template(video_to_process='C:\\Twitch VODs\\20181010_320703513_League of Legends.mp4',
                          filter_threshold=0.9, starting_frame=1, convert_to_greyscale=False, frames_to_skip=15)
