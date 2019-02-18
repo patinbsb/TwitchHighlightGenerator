@@ -167,6 +167,7 @@ def write_highlight_or_match_audio_segment_to_file(filename, audio_seconds):
         writer = csv.writer(csvfile)
         writer.writerows(audio_seconds)
 
+
 def convert_frame_to_seconds(frame, fps):
     return frame / fps
 
