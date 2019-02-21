@@ -1,16 +1,9 @@
 import os
-from PIL import Image
-import io
 import cv2
-from google.cloud import vision_v1p2beta1 as vision
-from google.cloud.vision_v1p2beta1 import types
+from skimage.measure import compare_ssim
+
 
 current_directory_path = os.path.dirname(os.path.abspath(__file__))
-#TODO test this works on cloud instance
-credential_path = current_directory_path + '\\visionapi.json'
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = credential_path
-
-client = vision.ImageAnnotatorClient()
 
 '''
 Uses OCR technology (tesseract) to get the total kill count in each video frame in a supplied video file
@@ -25,44 +18,51 @@ def capture_kill_differences(cap):
     video_width, video_height = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)), int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
     number_of_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
 
+    prev_red_score = None
     # Iterate over each frame
     while cap.isOpened():
         ret, frame = cap.read()
         if ret is True:
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            # frame = cv2.threshold(frame, 20, 240, cv2.THRESH_TOZERO)[1]
-            cropped_frame_blue_team = frame[2:30, int(video_width/2 - 25): int(video_width/2 - 2)]*2
-            cropped_frame_red_team = frame[2:30, int(video_width/2 + 8): int(video_width/2 + 25)]*2
+            #frame = cv2.threshold(frame, 10, 255, cv2.THRESH_TOZERO)[1]
+            blue_score = frame[2:30, int(video_width/2 - 25): int(video_width/2 - 1)]*2
+            red_score = frame[2:30, int(video_width/2 + 8): int(video_width/2 + 25)]*2
+
+            # TODO capture sword icon and check if within tolerance to filter out issues
+            # TODO with false positives from scene transition effects
+            # Starting condition
+            if prev_red_score is None:
+                prev_red_score = red_score
+                prev_blue_score = blue_score
+            else:
+                (diff_score_blue, diff_blue) = compare_ssim(prev_blue_score, blue_score, full=True)
+                (diff_score_red, diff_red) = compare_ssim(prev_blue_score, blue_score, full=True)
+
+                if diff_score_blue > 0.90:
+                    # cv2.imshow('curr same', blue_score)
+                    # cv2.imshow('prev same', prev_blue_score)
+                    # if cv2.waitKey(0) & 0xFF == ord('q'):
+                    #     break
+                    print ('similar')
+                else:
+                    print('different')
+                    cv2.imshow('curr different', blue_score)
+                    cv2.imshow('prev different', prev_blue_score)
+                    if cv2.waitKey(0) & 0xFF == ord('q'):
+                        prev_red_score = red_score
+                        prev_blue_score = blue_score
+                        continue
+                prev_red_score = red_score
+                prev_blue_score = blue_score
+
+
+
             # cv2.imshow('left', cropped_frame_left)
             # if cv2.waitKey(0) & 0xFF == ord('q'):
             #     break
             # cv2.imshow('right', cropped_frame_right)
             # if cv2.waitKey(0) & 0xFF == ord('q'):
             #     break
-
-            # image_blue_team = types.text_annotation_pb2(content=cropped_frame_blue_team)
-            # image_red_team = types.image(content=cropped_frame_red_team)
-
-            cv2.imwrite('test.png', cropped_frame_blue_team)
-
-            with io.open('test.png', 'rb') as testImage:
-                image = vision.types.Image(content=testImage.read())
-                response = client.text_detection(image=image)
-            texts = response.text_annotations
-
-            # cv2.imshow('left', cropped_frame_blue_team)
-            # if cv2.waitKey(0) & 0xFF == ord('q'):
-            #     break
-
-            print('Texts:')
-
-            for text in texts:
-                print('\n"{}"'.format(text.description))
-
-                vertices = (['({},{})'.format(vertex.x, vertex.y)
-                             for vertex in text.bounding_poly.vertices])
-
-                print('bounds: {}'.format(','.join(vertices)))
 
         # No more frames to process
         if ret is False:
@@ -110,6 +110,7 @@ for highlight in highlights:
     video_to_process = current_directory_path + '\\' + highlight
     # Load the video into cv2
     cap = cv2.VideoCapture(video_to_process)
+    print ('processing ' + highlight)
     capture_kill_differences(cap)
 
 
