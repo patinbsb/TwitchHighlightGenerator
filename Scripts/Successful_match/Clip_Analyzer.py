@@ -1,5 +1,16 @@
 import os
+from PIL import Image
+import io
 import cv2
+from google.cloud import vision_v1p2beta1 as vision
+from google.cloud.vision_v1p2beta1 import types
+
+current_directory_path = os.path.dirname(os.path.abspath(__file__))
+#TODO test this works on cloud instance
+credential_path = current_directory_path + '\\visionapi.json'
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = credential_path
+
+client = vision.ImageAnnotatorClient()
 
 '''
 Uses OCR technology (tesseract) to get the total kill count in each video frame in a supplied video file
@@ -19,16 +30,39 @@ def capture_kill_differences(cap):
         ret, frame = cap.read()
         if ret is True:
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            frame = cv2.threshold(frame, 50, 255, cv2.THRESH_TOZERO)[1]
-            cropped_frame_left = frame[2:30, int(video_width/2 - 25): int(video_width/2 - 2)]*2
-            cropped_frame_right = frame[2:30, int(video_width/2 + 8): int(video_width/2 + 25)]*2
-            cv2.imshow('left', cropped_frame_left)
-            if cv2.waitKey(0) & 0xFF == ord('q'):
-                break
-            cv2.imshow('right', cropped_frame_right)
-            if cv2.waitKey(0) & 0xFF == ord('q'):
-                break
+            # frame = cv2.threshold(frame, 20, 240, cv2.THRESH_TOZERO)[1]
+            cropped_frame_blue_team = frame[2:30, int(video_width/2 - 25): int(video_width/2 - 2)]*2
+            cropped_frame_red_team = frame[2:30, int(video_width/2 + 8): int(video_width/2 + 25)]*2
+            # cv2.imshow('left', cropped_frame_left)
+            # if cv2.waitKey(0) & 0xFF == ord('q'):
+            #     break
+            # cv2.imshow('right', cropped_frame_right)
+            # if cv2.waitKey(0) & 0xFF == ord('q'):
+            #     break
 
+            # image_blue_team = types.text_annotation_pb2(content=cropped_frame_blue_team)
+            # image_red_team = types.image(content=cropped_frame_red_team)
+
+            cv2.imwrite('test.png', cropped_frame_blue_team)
+
+            with io.open('test.png', 'rb') as testImage:
+                image = vision.types.Image(content=testImage.read())
+                response = client.text_detection(image=image)
+            texts = response.text_annotations
+
+            # cv2.imshow('left', cropped_frame_blue_team)
+            # if cv2.waitKey(0) & 0xFF == ord('q'):
+            #     break
+
+            print('Texts:')
+
+            for text in texts:
+                print('\n"{}"'.format(text.description))
+
+                vertices = (['({},{})'.format(vertex.x, vertex.y)
+                             for vertex in text.bounding_poly.vertices])
+
+                print('bounds: {}'.format(','.join(vertices)))
 
         # No more frames to process
         if ret is False:
@@ -60,7 +94,7 @@ def capture_ultimate_usage():
 # Get files in current directory
 clips = os.listdir()
 
-current_directory_path = os.path.dirname(os.path.abspath(__file__))
+
 
 highlights = []
 matches = []
