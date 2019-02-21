@@ -93,8 +93,42 @@ if a players ultimate indicator becomes desaturated between 2 frames then that p
 '''
 
 
-def capture_ultimate_usage():
+def capture_ultimate_usage(cap, display_matched_frames=False):
     ult_usage_over_time = []
+
+    # Draws a square of side length capture_region_offset
+    capture_region_offset = 4
+
+    # Locations of each teams champions ultimate status
+    blue_team_positions = [(30, 70), (30, 116), (30, 162), (30, 208), (30, 254)]
+    red_team_positions = [(817, 70), (817, 116), (817, 162), (817, 208), (817, 254)]
+
+    # Collecting video metadata for exporting to video
+    fps = cap.get(cv2.CAP_PROP_FPS)
+    video_width, video_height = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)), int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    number_of_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+
+    current_frame = 1
+    starting_frame = True
+    # Iterate over each frame
+    while cap.isOpened():
+        ret, frame = cap.read()
+        if ret is True:
+
+            # Used to filter out scene transition effects that give false positives
+            control_icon = frame[2:30, int(video_width/2 - 6): int(video_width/2 + 10)]
+
+            # Starting condition
+            if starting_frame is True:
+                prev_control_icon = control_icon
+                starting_frame = False
+            else:
+
+                prev_control_icon = control_icon
+                current_frame += 1
+        # No more frames to process
+        if ret is False:
+            cap.release()
 
     return ult_usage_over_time
 
@@ -114,18 +148,18 @@ for clip in clips:
         matches.append(clip)
 
 # Process number of kills in each highlight
-# highlight_kill_frames = []
-# for highlight in highlights:
-#     video_to_process = current_directory_path + '\\' + highlight
-#     # Load the video into cv2
-#     cap = cv2.VideoCapture(video_to_process)
-#     print('processing ' + highlight)
-#     kill_frames = capture_kill_differences(cap)
-#     highlight_kill_frames.append((highlight, kill_frames))
-#
-# for highlight_name in highlight_kill_frames:
-#     print(highlight_name[0])
-#     print(len(highlight_name[1]))
+highlight_kill_frames = []
+for highlight in highlights:
+    video_to_process = current_directory_path + '\\' + highlight
+    # Load the video into cv2
+    cap = cv2.VideoCapture(video_to_process)
+    print('processing ' + highlight)
+    kill_frames = capture_kill_differences(cap)
+    highlight_kill_frames.append((highlight, kill_frames))
+
+for highlight_name in highlight_kill_frames:
+    print(highlight_name[0])
+    print(len(highlight_name[1]))
 
 # Process number of kills in each match
 match_kill_frames = []
