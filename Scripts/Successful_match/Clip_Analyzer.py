@@ -46,7 +46,7 @@ def capture_kill_differences(cap, display_matched_frames=False):
                 (diff_control_icon, diff_control) = compare_ssim(prev_control_icon, control_icon, full=True)
 
                 # Check frame differences are below a certain threshold and the control is unchanged
-                if diff_score_blue < 0.95 and diff_control_icon > 0.80:
+                if diff_score_blue < 0.75 and diff_control_icon > 0.75:
                     # kill change registered on this frame
                     kills_over_time.append(current_frame)
                     if display_matched_frames is True:
@@ -57,7 +57,7 @@ def capture_kill_differences(cap, display_matched_frames=False):
                             prev_blue_score = blue_score
                             continue
 
-                if diff_score_red < 0.95 and diff_control_icon > 0.80:
+                if diff_score_red < 0.75 and diff_control_icon > 0.75:
                     # kill change registered on this frame
                     kills_over_time.append(current_frame)
                     if display_matched_frames is True:
@@ -114,18 +114,18 @@ for clip in clips:
         matches.append(clip)
 
 # Process number of kills in each highlight
-highlight_kill_frames = []
-for highlight in highlights:
-    video_to_process = current_directory_path + '\\' + highlight
-    # Load the video into cv2
-    cap = cv2.VideoCapture(video_to_process)
-    print('processing ' + highlight)
-    kill_frames = capture_kill_differences(cap)
-    highlight_kill_frames.append((highlight, kill_frames))
-
-for highlight_name in highlight_kill_frames:
-    print(highlight_name[0])
-    print(len(highlight_name[1]))
+# highlight_kill_frames = []
+# for highlight in highlights:
+#     video_to_process = current_directory_path + '\\' + highlight
+#     # Load the video into cv2
+#     cap = cv2.VideoCapture(video_to_process)
+#     print('processing ' + highlight)
+#     kill_frames = capture_kill_differences(cap)
+#     highlight_kill_frames.append((highlight, kill_frames))
+#
+# for highlight_name in highlight_kill_frames:
+#     print(highlight_name[0])
+#     print(len(highlight_name[1]))
 
 # Process number of kills in each match
 match_kill_frames = []
