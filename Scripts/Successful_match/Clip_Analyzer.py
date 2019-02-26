@@ -113,6 +113,8 @@ def capture_ultimate_usage(cap, display_matched_frames=False):
     starting_frame = True
     prev_red_team_frames = []
     prev_blue_team_frames = []
+    team_position = {}
+    blacklist = []
     # Iterate over each frame
     while cap.isOpened():
         ret, frame = cap.read()
@@ -142,40 +144,87 @@ def capture_ultimate_usage(cap, display_matched_frames=False):
                 mean_prev_frame = cv2.mean(cv2.cvtColor(prev_frame, cv2.COLOR_BGR2GRAY))
                 mean_brightness_change = abs(mean_frame[0] - mean_prev_frame[0])
 
-                hsv_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-                hsv_prev_frame = cv2.cvtColor(prev_frame, cv2.COLOR_BGR2HSV)
-
-                frame_h, frame_s, frame_v = hsv_frame[:, :, 0], hsv_frame[:, :, 1], hsv_frame[:, :, 2]
-                prev_frame_h, prev_frame_s, prev_frame_v = hsv_prev_frame[:, :, 0], hsv_prev_frame[:, :, 1], hsv_prev_frame[:, :, 2]
 
 
-
-                counter = 1
+                team = 'red'
+                position = 1
+                ult_use_positions = []
                 for curr_ult, prev_ult in zip(red_team_frames, prev_red_team_frames):
                     mean_ult_frame = cv2.mean(cv2.cvtColor(curr_ult, cv2.COLOR_BGR2GRAY))
                     mean_prev_ult_frame = cv2.mean(cv2.cvtColor(prev_ult, cv2.COLOR_BGR2GRAY))
 
-                    if abs(mean_prev_ult_frame[0] - mean_ult_frame[0]) > mean_brightness_change + 20:
-                        print('found brightness change: ' + str(abs(mean_prev_ult_frame[0] - mean_ult_frame[0]))
-                              + ' | position: ' + str(counter) + ' | Avg change: ' + str(mean_brightness_change))
+                    if mean_prev_ult_frame[0] - mean_ult_frame[0] > mean_brightness_change + 20:
+                        if display_matched_frames:
+                            print('found brightness change: ' + str(abs(mean_prev_ult_frame[0] - mean_ult_frame[0]))
+                                + ' | red team, position: ' + str(position) + ' | Avg change: '
+                                  + str(mean_brightness_change))
+                            cv2.imshow('curr', frame)
+                            cv2.imshow('prev', prev_frame)
+                            if cv2.waitKey(0) & 0xFF == ord('q'):
+                                prev_red_team_frames = copy.deepcopy(red_team_frames)
+                                prev_blue_team_frames = copy.deepcopy(blue_team_frames)
+                                prev_control_icon = control_icon
+                                prev_frame = frame
+                                position += 1
+                                continue
 
-                        print ('H curr_ult: ' + str(np.mean(cv2.cvtColor(curr_ult, cv2.COLOR_BGR2HSV)[:, :, 0]))
-                                + '| H prev_ult: ' + str(np.mean(cv2.cvtColor(prev_ult, cv2.COLOR_BGR2HSV)[:, :, 0]))
-                                + '| S curr_ult: ' + str(np.mean(cv2.cvtColor(curr_ult, cv2.COLOR_BGR2HSV)[:, :, 1]))
-                                + '| S prev_ult: ' + str(np.mean(cv2.cvtColor(prev_ult, cv2.COLOR_BGR2HSV)[:, :, 1]))
-                                + '| V curr_ult: ' + str(np.mean(cv2.cvtColor(curr_ult, cv2.COLOR_BGR2HSV)[:, :, 2]))
-                                + '| V prev_ult: ' + str(np.mean(cv2.cvtColor(prev_ult, cv2.COLOR_BGR2HSV)[:, :, 2])))
-                        cv2.imshow('curr', frame)
-                        cv2.imshow('prev', prev_frame)
-                        if cv2.waitKey(0) & 0xFF == ord('q'):
-                            prev_red_team_frames = copy.deepcopy(red_team_frames)
-                            prev_blue_team_frames = copy.deepcopy(blue_team_frames)
-                            prev_control_icon = control_icon
-                            prev_frame = frame
-                            counter += 1
-                            continue
-                    counter += 1
+                        if (team, position) in team_position:
+                            result = team_position[(team, position)]
+                            if abs(result[0] - current_frame) < 100:
+                                if result[1] + 1 > 6 and (team, position) not in blacklist:
+                                    blacklist.append((team, position))
+                                    ult_use_positions[:] = [x for x in ult_use_positions if x != (team, position)]
 
+                                team_position[(team, position)] = (current_frame, result[1] + 1)
+                            else:
+                                team_position[(team, position)] = (current_frame, result[1])
+                        else:
+                            team_position[(team, position)] = (current_frame, 0)
+                        if (team, position) not in blacklist:
+                            ult_use_positions.append([team, position])
+                    position += 1
+
+                position = 1
+                team = 'blue'
+                for curr_ult, prev_ult in zip(blue_team_frames, prev_blue_team_frames):
+                    mean_ult_frame = cv2.mean(cv2.cvtColor(curr_ult, cv2.COLOR_BGR2GRAY))
+                    mean_prev_ult_frame = cv2.mean(cv2.cvtColor(prev_ult, cv2.COLOR_BGR2GRAY))
+
+                    if mean_prev_ult_frame[0] - mean_ult_frame[0] > mean_brightness_change + 20:
+                        if display_matched_frames:
+                            print('found brightness change: ' + str(abs(mean_prev_ult_frame[0] - mean_ult_frame[0]))
+                                  + ' | blue team, position: ' + str(position) + ' | Avg change: ' +
+                                  str(mean_brightness_change))
+                            cv2.imshow('curr', frame)
+                            cv2.imshow('prev', prev_frame)
+                            if cv2.waitKey(0) & 0xFF == ord('q'):
+                                prev_red_team_frames = copy.deepcopy(red_team_frames)
+                                prev_blue_team_frames = copy.deepcopy(blue_team_frames)
+                                prev_control_icon = control_icon
+                                prev_frame = frame
+                                position += 1
+                                continue
+
+                        if (team, position) in team_position:
+                            result = team_position[(team, position)]
+                            if abs(result[0] - current_frame) < 100:
+                                if result[1] + 1 > 6 and (team, position) not in blacklist:
+                                    blacklist.append((team, position))
+                                    ult_use_positions[:] = [x for x in ult_use_positions if x != (team, position)]
+
+                                team_position[(team, position)] = (current_frame, result[1] + 1)
+                            else:
+                                team_position[(team, position)] = (current_frame, result[1])
+                        else:
+                            team_position[(team, position)] = (current_frame, 0)
+                        if (team, position) not in blacklist:
+                            ult_use_positions.append([team, position])
+                    position += 1
+
+                # Filter out radical ult usage
+                if len(ult_use_positions) < 3 and len(ult_use_positions) > 0:
+
+                    ult_usage_over_time.append([current_frame, ult_use_positions])
 
                 prev_red_team_frames = copy.deepcopy(red_team_frames)
                 prev_blue_team_frames = copy.deepcopy(blue_team_frames)
@@ -211,13 +260,13 @@ for clip in clips:
 #
 #     # Load the video into cv2
 #     cap = cv2.VideoCapture(video_to_process)
-#     print('processing ' + highlight)
+#     print('processing ultimate usage: ' + highlight)
 #     ultimate_frames = capture_ultimate_usage(cap)
 #     highlight_ultimate_frames.append((highlight, ultimate_frames))
 #
 #     # Load the video into cv2
 #     cap = cv2.VideoCapture(video_to_process)
-#     print('processing ' + highlight)
+#     print('processing kill count: ' + highlight)
 #     kill_frames = capture_kill_differences(cap)
 #     highlight_kill_frames.append((highlight, kill_frames))
 #
@@ -233,18 +282,29 @@ for match in matches:
 
     # Load the video into cv2
     cap = cv2.VideoCapture(video_to_process)
-    print('processing ' + match)
+    print('processing ultimate usage: ' + match)
     ultimate_frames = capture_ultimate_usage(cap)
     match_ultimate_frames.append((match, ultimate_frames))
 
     # Load the video into cv2
     cap = cv2.VideoCapture(video_to_process)
-    print('processing ' + match)
+    print('processing kill count: ' + match)
     kill_frames = capture_kill_differences(cap)
     match_kill_frames.append((match, kill_frames))
 
-for match_name in match_kill_frames:
-    print(match_name[0])
-    print(len(match_name[1]))
+for matched_kill_frame in match_kill_frames:
+    match_name = matched_kill_frame[0]
+    kill_frames = matched_kill_frame[1]
+    print('Kill count: ' + match_name)
+    print(len(kill_frames))
+
+for match_ultimate_frames in match_ultimate_frames:
+    match_name = match_ultimate_frames[0]
+    positions_teams_and_frames_of_matched_ultimate = match_ultimate_frames[1]
+    print('Ultimate usage: ' + match_name)
+    print(len(positions_teams_and_frames_of_matched_ultimate))
 
 
+#TODO grade ultimate score on a scale of sum(player ults) = sum 1/(total_player_ults) = 1.0
+#TODO so if player ults 10 times, each ult has a score of 0.1 (soft cap? minimum/max?)
+#TODO grade kill value from 1.0 * kill at time=0 to 0.8 * kill at time=end_of_match
