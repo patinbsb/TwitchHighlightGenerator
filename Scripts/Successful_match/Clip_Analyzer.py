@@ -1,7 +1,8 @@
 import os
 import cv2
+import copy
 from skimage.measure import compare_ssim
-
+import numpy as np
 
 current_directory_path = os.path.dirname(os.path.abspath(__file__))
 
@@ -96,8 +97,8 @@ if a players ultimate indicator becomes desaturated between 2 frames then that p
 def capture_ultimate_usage(cap, display_matched_frames=False):
     ult_usage_over_time = []
 
-    # Draws a square of side length capture_region_offset
-    capture_region_offset = 4
+    # Draws a square of side length offset
+    offset = 4
 
     # Locations of each teams champions ultimate status
     blue_team_positions = [(30, 70), (30, 116), (30, 162), (30, 208), (30, 254)]
@@ -110,10 +111,21 @@ def capture_ultimate_usage(cap, display_matched_frames=False):
 
     current_frame = 1
     starting_frame = True
+    prev_red_team_frames = []
+    prev_blue_team_frames = []
     # Iterate over each frame
     while cap.isOpened():
         ret, frame = cap.read()
         if ret is True:
+            blue_team_frames = []
+            for position in blue_team_positions:
+                x, y = position[0], position[1]
+                blue_team_frames.append(frame[y:y + offset, x:x + offset])
+
+            red_team_frames = []
+            for position in red_team_positions:
+                x, y = position[0], position[1]
+                red_team_frames.append(frame[y:y + offset, x:x + offset])
 
             # Used to filter out scene transition effects that give false positives
             control_icon = frame[2:30, int(video_width/2 - 6): int(video_width/2 + 10)]
@@ -121,10 +133,54 @@ def capture_ultimate_usage(cap, display_matched_frames=False):
             # Starting condition
             if starting_frame is True:
                 prev_control_icon = control_icon
+                prev_red_team_frames = copy.deepcopy(red_team_frames)
+                prev_blue_team_frames = copy.deepcopy(blue_team_frames)
+                prev_frame = frame
                 starting_frame = False
             else:
+                mean_frame = cv2.mean(cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY))
+                mean_prev_frame = cv2.mean(cv2.cvtColor(prev_frame, cv2.COLOR_BGR2GRAY))
+                mean_brightness_change = abs(mean_frame[0] - mean_prev_frame[0])
 
+                hsv_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+                hsv_prev_frame = cv2.cvtColor(prev_frame, cv2.COLOR_BGR2HSV)
+
+                frame_h, frame_s, frame_v = hsv_frame[:, :, 0], hsv_frame[:, :, 1], hsv_frame[:, :, 2]
+                prev_frame_h, prev_frame_s, prev_frame_v = hsv_prev_frame[:, :, 0], hsv_prev_frame[:, :, 1], hsv_prev_frame[:, :, 2]
+
+
+
+                counter = 1
+                for curr_ult, prev_ult in zip(red_team_frames, prev_red_team_frames):
+                    mean_ult_frame = cv2.mean(cv2.cvtColor(curr_ult, cv2.COLOR_BGR2GRAY))
+                    mean_prev_ult_frame = cv2.mean(cv2.cvtColor(prev_ult, cv2.COLOR_BGR2GRAY))
+
+                    if abs(mean_prev_ult_frame[0] - mean_ult_frame[0]) > mean_brightness_change + 20:
+                        print('found brightness change: ' + str(abs(mean_prev_ult_frame[0] - mean_ult_frame[0]))
+                              + ' | position: ' + str(counter) + ' | Avg change: ' + str(mean_brightness_change))
+
+                        print ('H curr_ult: ' + str(np.mean(cv2.cvtColor(curr_ult, cv2.COLOR_BGR2HSV)[:, :, 0]))
+                                + '| H prev_ult: ' + str(np.mean(cv2.cvtColor(prev_ult, cv2.COLOR_BGR2HSV)[:, :, 0]))
+                                + '| S curr_ult: ' + str(np.mean(cv2.cvtColor(curr_ult, cv2.COLOR_BGR2HSV)[:, :, 1]))
+                                + '| S prev_ult: ' + str(np.mean(cv2.cvtColor(prev_ult, cv2.COLOR_BGR2HSV)[:, :, 1]))
+                                + '| V curr_ult: ' + str(np.mean(cv2.cvtColor(curr_ult, cv2.COLOR_BGR2HSV)[:, :, 2]))
+                                + '| V prev_ult: ' + str(np.mean(cv2.cvtColor(prev_ult, cv2.COLOR_BGR2HSV)[:, :, 2])))
+                        cv2.imshow('curr', frame)
+                        cv2.imshow('prev', prev_frame)
+                        if cv2.waitKey(0) & 0xFF == ord('q'):
+                            prev_red_team_frames = copy.deepcopy(red_team_frames)
+                            prev_blue_team_frames = copy.deepcopy(blue_team_frames)
+                            prev_control_icon = control_icon
+                            prev_frame = frame
+                            counter += 1
+                            continue
+                    counter += 1
+
+
+                prev_red_team_frames = copy.deepcopy(red_team_frames)
+                prev_blue_team_frames = copy.deepcopy(blue_team_frames)
                 prev_control_icon = control_icon
+                prev_frame = frame
                 current_frame += 1
         # No more frames to process
         if ret is False:
@@ -147,24 +203,40 @@ for clip in clips:
     if 'match' in clip and '.mp4' in clip:
         matches.append(clip)
 
-# Process number of kills in each highlight
-highlight_kill_frames = []
-for highlight in highlights:
-    video_to_process = current_directory_path + '\\' + highlight
-    # Load the video into cv2
-    cap = cv2.VideoCapture(video_to_process)
-    print('processing ' + highlight)
-    kill_frames = capture_kill_differences(cap)
-    highlight_kill_frames.append((highlight, kill_frames))
-
-for highlight_name in highlight_kill_frames:
-    print(highlight_name[0])
-    print(len(highlight_name[1]))
+# # Process number of kills in each highlight
+# highlight_kill_frames = []
+# highlight_ultimate_frames = []
+# for highlight in highlights:
+#     video_to_process = current_directory_path + '\\' + highlight
+#
+#     # Load the video into cv2
+#     cap = cv2.VideoCapture(video_to_process)
+#     print('processing ' + highlight)
+#     ultimate_frames = capture_ultimate_usage(cap)
+#     highlight_ultimate_frames.append((highlight, ultimate_frames))
+#
+#     # Load the video into cv2
+#     cap = cv2.VideoCapture(video_to_process)
+#     print('processing ' + highlight)
+#     kill_frames = capture_kill_differences(cap)
+#     highlight_kill_frames.append((highlight, kill_frames))
+#
+# for highlight_name in highlight_kill_frames:
+#     print(highlight_name[0])
+#     print(len(highlight_name[1]))
 
 # Process number of kills in each match
 match_kill_frames = []
+match_ultimate_frames = []
 for match in matches:
     video_to_process = current_directory_path + '\\' + match
+
+    # Load the video into cv2
+    cap = cv2.VideoCapture(video_to_process)
+    print('processing ' + match)
+    ultimate_frames = capture_ultimate_usage(cap)
+    match_ultimate_frames.append((match, ultimate_frames))
+
     # Load the video into cv2
     cap = cv2.VideoCapture(video_to_process)
     print('processing ' + match)
