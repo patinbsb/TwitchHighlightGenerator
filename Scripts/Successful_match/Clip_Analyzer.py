@@ -2,13 +2,12 @@ import os
 import cv2
 import copy
 from skimage.measure import compare_ssim
-import numpy as np
 
 current_directory_path = os.path.dirname(os.path.abspath(__file__))
 
 '''
-Uses OCR technology (tesseract) to get the total kill count in each video frame in a supplied video file
-It then will create a representation of kills over time
+Uses skimage to capture changes in the number of kills for each team
+It will output a list of frames where a kill occurred.
 '''
 
 
@@ -77,20 +76,13 @@ def capture_kill_differences(cap, display_matched_frames=False):
             cap.release()
     return kills_over_time
 
-'''
-Uses openCV to locate the position of each team players position and the team player belongs to
-it then will find the distance between opposing teams by averaging each teams player position
-'''
-
-
-def capture_distance_between_teams():
-    distance_between_teams = []
-
-    return distance_between_teams
 
 '''
 Uses openCV to capture the average colour of each player ultimate indicator
 if a players ultimate indicator becomes desaturated between 2 frames then that player has used its ultimate
+outputs a list of frames where an ultimate use occurred and the team + player that used its ultimate.
+filters out ultimate usages where the number of ultimates used was over 3 to reduce noise
+also filters out team members that have a excessively large amount of ultimate usages 
 '''
 
 
