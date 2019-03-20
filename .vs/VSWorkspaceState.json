@@ -1,8 +1,9 @@
 {
   "ExpandedNodes": [
     "",
-    "\\TwitchBackend"
+    "\\TwitchBackend",
+    "\\TwitchBackend\\HighlightGenerator"
   ],
-  "SelectedNode": "\\TwitchBackend",
+  "SelectedNode": "\\TwitchBackend\\HighlightGenerator\\HighlightGenerator.sln",
   "PreviewInSolutionExplorer": false
 }
