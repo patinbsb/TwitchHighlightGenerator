@@ -1,0 +1,13 @@
+C:\Users\patin_000\Source\Repos\DSP\TwitchBackend\HighlightGenerator\HighlightGenerator\obj\Debug\HighlightGenerator.csprojAssemblyReference.cache
+C:\Users\patin_000\Source\Repos\DSP\TwitchBackend\HighlightGenerator\HighlightGenerator\obj\Debug\HighlightGenerator.csproj.CoreCompileInputs.cache
+C:\Users\patin_000\Source\Repos\DSP\TwitchBackend\HighlightGenerator\HighlightGenerator\bin\Debug\HighlightGenerator.exe.config
+C:\Users\patin_000\Source\Repos\DSP\TwitchBackend\HighlightGenerator\HighlightGenerator\bin\Debug\HighlightGenerator.exe
+C:\Users\patin_000\Source\Repos\DSP\TwitchBackend\HighlightGenerator\HighlightGenerator\bin\Debug\HighlightGenerator.pdb
+C:\Users\patin_000\Source\Repos\DSP\TwitchBackend\HighlightGenerator\HighlightGenerator\obj\Debug\HighlightGenerator.csproj.CopyComplete
+C:\Users\patin_000\Source\Repos\DSP\TwitchBackend\HighlightGenerator\HighlightGenerator\obj\Debug\HighlightGenerator.exe
+C:\Users\patin_000\Source\Repos\DSP\TwitchBackend\HighlightGenerator\HighlightGenerator\obj\Debug\HighlightGenerator.pdb
+C:\Users\patin_000\Source\Repos\DSP\TwitchBackend\HighlightGenerator\HighlightGenerator\bin\Debug\WebDriver.dll
+C:\Users\patin_000\Source\Repos\DSP\TwitchBackend\HighlightGenerator\HighlightGenerator\bin\Debug\WebDriver.xml
+C:\Users\patin_000\Source\Repos\DSP\TwitchBackend\HighlightGenerator\HighlightGenerator\bin\Debug\Newtonsoft.Json.dll
+C:\Users\patin_000\Source\Repos\DSP\TwitchBackend\HighlightGenerator\HighlightGenerator\bin\Debug\Newtonsoft.Json.pdb
+C:\Users\patin_000\Source\Repos\DSP\TwitchBackend\HighlightGenerator\HighlightGenerator\bin\Debug\Newtonsoft.Json.xml
