@@ -17,13 +17,7 @@ namespace HighlightGenerator
 {
     internal class ChatLogParser
     {
-
-        internal ChatLogParser()
-        {
-            this.ChatLogPrefix = ConfigurationManager.AppSettings["ChatLogPrefix"];
-        }
-
-        private string ChatLogPrefix { get; set; }
+        private readonly string ChatLogPrefix = ConfigurationManager.AppSettings["ChatLogPrefix"];
 
         internal ChatLog GenerateChatLog(DateTime date)
         {
