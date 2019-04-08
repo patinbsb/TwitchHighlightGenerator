@@ -16,6 +16,19 @@ namespace HighlightGenerator
 
         public List<Match> Matches { get; set; }
         public Broadcast Broadcast { get; set; }
+        public bool isPopulated = false;
 
+        public void PopulateMatchChatLogs()
+        {
+            foreach (var match in Matches)
+            {
+                Console.WriteLine($"Populating broadcast {Broadcast.Id}, match {match.Id}");
+                if (!match.IsPopulated)
+                {
+                    match.PopulateSegmentChatLogs();
+                }
+            }
+            isPopulated = true;
+        }
     }
 }

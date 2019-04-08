@@ -10,13 +10,13 @@ namespace HighlightGenerator
     {
         //TODO check LocalBroadcastManager for locally saved broadcast before committing to download.
 
-        private BroadcastInfo Info;
+        private Broadcast Info;
         private string Channel = "Riotgames";
 
         public BroadcastDownloader(string url)
         {
             this.Info = GetBroadcastInfo(url);
-            
+
         }
 
         public BroadcastDownloader(DateTime date)
@@ -24,17 +24,17 @@ namespace HighlightGenerator
             this.Info = GetBroadcastInfo(date);
         }
 
-        public BroadcastInfo GetBroadcastInfo(string url)
+        public Broadcast GetBroadcastInfo(string url)
         {
             return null;
         }
 
-        public BroadcastInfo GetBroadcastInfo(DateTime date)
+        public Broadcast GetBroadcastInfo(DateTime date)
         {
             return null;
         }
 
-        public Broadcast DownloadBroadcast(BroadcastInfo info)
+        public Broadcast DownloadBroadcast(Broadcast info)
         {
             return null;
         }

@@ -8,17 +8,30 @@ namespace HighlightGenerator
 {
     public class Match
     {
-        public Match(DateTime startTime, int id, bool isInstantReplay, ChatLog chatLog)
+        public Match(DateTime startTime, int id, bool isInstantReplay, List<MatchSegment> segments)
         {
             this.StartTime = startTime;
             this.Id = id;
             this.IsInstantReplay = isInstantReplay;
-            this.ChatLog = chatLog;
+            this.Segments = segments;
         }
-
-        public ChatLog ChatLog { get; set; }
         public bool IsInstantReplay { get; set; }
         public int Id { get; set; }
         public DateTime StartTime { get; set; }
+        public List<MatchSegment> Segments { get; set; }
+        public bool IsPopulated = false;
+
+        public void PopulateSegmentChatLogs()
+        {
+            foreach (var segment in Segments)
+            {
+                if (!segment.IsPopulated)
+                {
+                    segment.ChatLog = ChatLogParser.GetChatInRange(StartTime, segment.StartTime, segment.EndTime);
+                    segment.IsPopulated = true;
+                }
+            }
+            IsPopulated = true;
+        }
     }
 }
