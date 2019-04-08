@@ -8,24 +8,40 @@ namespace HighlightGenerator
 {
     public class MatchAnalyzer
     {
-        public MatchAnalyzer(FilteredMatches filteredMatches, List<MatchMetric> killDifferences, List<MatchMetric> ultimateUsage, List<MatchMetric> chatRate)
+        public static string ClipAnalyzerScriptPath = Helper.ScriptsPath + "Clip_Analyzer.py";
+
+        //public MatchAnalyzer(FilteredMatches filteredMatches, List<MatchMetric> killDifferences, List<MatchMetric> ultimateUsage, List<MatchMetric> chatRate)
+        //{
+        //    FilteredMatches = filteredMatches;
+        //    KillDifferences = killDifferences;
+        //    UltimateUsage = ultimateUsage;
+        //    ChatRate = chatRate;
+        //}
+
+        public MatchAnalyzer()
         {
-            FilteredMatches = filteredMatches;
-            KillDifferences = killDifferences;
-            UltimateUsage = ultimateUsage;
-            ChatRate = chatRate;
+
         }
 
-        public FilteredMatches FilteredMatches { get; set; }
-        public List<MatchMetric> KillDifferences { get; set; }
-        public List<MatchMetric> UltimateUsage { get; set; }
-        public List<MatchMetric> ChatRate { get; set; }
+        //public FilteredMatches FilteredMatches { get; set; }
+        //public List<MatchMetric> KillDifferences { get; set; }
+        //public List<MatchMetric> UltimateUsage { get; set; }
+        //public List<MatchMetric> ChatRate { get; set; }
 
         public List<MatchMetrics> AnalyzeMatches(FilteredMatches filteredMatches)
         {
-            // Run pythonscript...
+            var broadcastDirectory = filteredMatches.GetDirectoryPath();
+            List<MatchMetrics> matchMetrics = new List<MatchMetrics>();
+            foreach (var filteredMatch in filteredMatches.Matches)
+            {
+                var matchPath = broadcastDirectory + filteredMatch.GetFileName();
+                matchMetrics.Add(AnalyzeMatch(matchPath, filteredMatch));
+            }
+        }
 
-            return null;
+        private MatchMetrics AnalyzeMatch(string matchPath, Match match)
+        {
+            
         }
     }
 

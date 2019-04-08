@@ -12,8 +12,8 @@ namespace HighlightGenerator
     public static class FilteredMatchesManager
     {
         private static string BroadcastPath = ConfigurationManager.AppSettings["BroadcastsPath"];
-        private static string FilteredMatchesJson = "FilteredMatches.json";
-        public static List<FilteredMatches> FilteredMatches { get; private set; }
+        private static string FilteredMatchesJson = "FilteredMatch.json";
+        public static List<FilteredMatch> FilteredMatches { get; private set; }
 
         // Loads in the filteredMatch list file
         public static void loadFromJson()
@@ -21,15 +21,15 @@ namespace HighlightGenerator
             if (File.Exists(BroadcastPath + FilteredMatchesJson))
             {
                 var filteredMatchJson = File.ReadAllText(BroadcastPath + FilteredMatchesJson);
-                FilteredMatches = JsonConvert.DeserializeObject<List<FilteredMatches>>(filteredMatchJson);
+                FilteredMatches = JsonConvert.DeserializeObject<List<FilteredMatch>>(filteredMatchJson);
                 if (FilteredMatches == null)
                 {
-                    FilteredMatches = new List<FilteredMatches>();
+                    FilteredMatches = new List<FilteredMatch>();
                 }
             }
             else
             {
-                FilteredMatches = new List<FilteredMatches>();
+                FilteredMatches = new List<FilteredMatch>();
             }
         }
 
@@ -39,10 +39,10 @@ namespace HighlightGenerator
         }
 
         /// <summary>
-        /// Adds filteredMatch to the filteredMatches list and creates a JSON copy for offline use.
+        /// Adds filteredMatch to the filteredMatch list and creates a JSON copy for offline use.
         /// </summary>
         /// <param name="filteredMatch"></param>
-        public static void AddFilteredMatch(FilteredMatches filteredMatch)
+        public static void AddFilteredMatch(FilteredMatch filteredMatch)
         {
             if (!FilteredMatches.Contains(filteredMatch))
             {
@@ -56,10 +56,10 @@ namespace HighlightGenerator
         }
 
         /// <summary>
-        /// Adds filteredMatch to the filteredMatches list and creates a JSON copy for offline use.
+        /// Adds filteredMatch to the filteredMatch list and creates a JSON copy for offline use.
         /// </summary>
         /// <param name="filteredMatches"></param>
-        public static void AddFilteredMatches(List<FilteredMatches> filteredMatches)
+        public static void AddFilteredMatches(List<FilteredMatch> filteredMatches)
         {
             foreach (var filteredMatch in filteredMatches)
             {

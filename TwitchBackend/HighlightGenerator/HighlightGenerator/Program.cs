@@ -79,6 +79,15 @@ namespace HighlightGenerator
 
             FilteredMatchesManager.AddFilteredMatches(filteredMatchesToAdd);
 
+            // Analyze filtered matches.
+            MatchAnalyzer analyzer = new MatchAnalyzer();
+
+            List<List<MatchMetrics>> matchMetricsList = new List<List<MatchMetrics>>();
+
+            foreach (var filteredMatches in filteredMatchesToAdd)
+            {
+                matchMetricsList.Add(analyzer.AnalyzeMatches(filteredMatches));
+            }
 
             //TODO purge filtered match chatlogs on complete.
 

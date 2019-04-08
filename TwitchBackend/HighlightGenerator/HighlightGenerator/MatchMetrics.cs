@@ -16,6 +16,14 @@ namespace HighlightGenerator
             Match = match;
         }
 
+        public MatchMetrics(Match match)
+        {
+            KillDifferences = new List<MatchMetric>();
+            UltimateUsage = new List<MatchMetric>();
+            ChatRate = new List<MatchMetric>();
+            Match = match;
+        }
+
         public List<MatchMetric> KillDifferences;
         public List<MatchMetric> UltimateUsage;
         public List<MatchMetric> ChatRate;

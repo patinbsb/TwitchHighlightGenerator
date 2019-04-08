@@ -33,5 +33,17 @@ namespace HighlightGenerator
             }
             IsPopulated = true;
         }
+
+        public string GetFileName()
+        {
+            if (IsInstantReplay)
+            {
+                return "highlight" + Id + ".mp4";
+            }
+            else
+            {
+                return "match" + Id + ".mp4";
+            }
+        }
     }
 }

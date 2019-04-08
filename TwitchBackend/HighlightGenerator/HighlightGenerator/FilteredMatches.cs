@@ -30,5 +30,10 @@ namespace HighlightGenerator
             }
             isPopulated = true;
         }
+
+        public string GetDirectoryPath()
+        {
+            return Helper.BroadcastsPath + Broadcast.Id + "//";
+        }
     }
 }
