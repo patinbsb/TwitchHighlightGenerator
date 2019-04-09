@@ -61,12 +61,6 @@ namespace HighlightGenerator
                 var timestampMatch = timeStampRegex.Match(match.ToString());
                 if (timestampMatch.Success)
                 {
-                    //DateTime timeStamp;
-                    //if (!DateTime.TryParseExact(timestampMatch.Value, "yyyy-MM-dd HH:mm:ss", new CultureInfo("en-UK"),
-                    //    DateTimeStyles.None, out timeStamp))
-                    //{
-                    //    throw new Exception($"DateTime was not interpreted properly. {timestampMatch.Value}");
-                    //}
                     var messageHour = int.Parse(timestampMatch.Value.Substring(11, 2));
 
                     if (messageHour < date.Hour)
@@ -85,10 +79,6 @@ namespace HighlightGenerator
 
                     rows.Add($"({broadcast.Id}, '{MySqlHelper.EscapeString(messageContent.Replace("@", ""))}', '{timestampMatch.Value}', " +
                              $"'{MySqlHelper.EscapeString(userName.Replace("@", " "))}')");
-
-
-
-                    //messages.Add(new Message(timeStamp, userName, messageContent));
                 }
                 else
                 {

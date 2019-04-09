@@ -41,7 +41,11 @@ namespace HighlightGenerator
             string scriptsPath = rootPath + "Scripts\\";
             ConfigurationManager.AppSettings["ScriptsPath"] = scriptsPath;
             string broadcastsPath = rootPath + "Broadcasts\\";
+            string analyzedMatchesPath = rootPath + "Analyzed Broadcasts\\";
+            string tensorflowDataPath = rootPath + "TensorflowData\\";
             ConfigurationManager.AppSettings["BroadcastsPath"] = broadcastsPath;
+            ConfigurationManager.AppSettings["AnalyzedMatchesPath"] = analyzedMatchesPath;
+            ConfigurationManager.AppSettings["TensorflowDataPath"] = tensorflowDataPath;
 
             //TODO this needs to be made machine agnostic
             // We locate the python interpreter location.
@@ -51,7 +55,10 @@ namespace HighlightGenerator
             // We check the Twitch VOD folder for pending videos.
             string twitchVodsPath = ConfigurationManager.AppSettings["TwitchVodsPath"];
 
+            // Initialise existing broadcast data from previous sessions.
+            FilteredMatchesManager.loadFromJson();
 
+            // Check for new videos to process.
             var files = Directory.GetFiles(twitchVodsPath);
             List<string> videosToProcess = new List<string>();
 
@@ -64,8 +71,73 @@ namespace HighlightGenerator
                 }
             }
 
-            // Initialise existing broadcast data from previous sessions.
-            FilteredMatchesManager.loadFromJson();
+            Console.WriteLine("");
+            Console.WriteLine("Analyzing matches.");
+            Console.WriteLine("");
+
+            AnalyzedMatchesManager.LoadFromFiles();
+
+            var analyzedMatches = AnalyzedMatchesManager.AnalyzedMatches;
+
+            var highlights = new List<MatchMetrics>();
+            var trainingData = new List<MatchMetrics>();
+            foreach (var match in analyzedMatches)
+            {
+                if (match.Match.IsInstantReplay)
+                {
+                    highlights.Add(match);
+                }
+
+                if (match.Match.BroadcastId == 317396487 &&
+                    (match.Match.Id == 1 || match.Match.Id == 2 || match.Match.Id == 3 || match.Match.Id == 4))
+                {
+                    trainingData.Add(match);
+                }
+            }
+
+
+            var deepLearner = new DeepLearner();
+
+            deepLearner.PrepareHighlightsForTensorFlow(highlights);
+
+            foreach (var match in trainingData)
+            {
+                deepLearner.PrepareMatchForTensorFlow(match);
+            }
+
+
+
+            //var matchAnalyzer = new MatchAnalyzer();
+            //var matchCollection = new List<List<MatchMetrics>>();
+            //foreach (var filteredMatch in FilteredMatchesManager.FilteredMatches)
+            //{
+            //    matchCollection.Add(matchAnalyzer.AnalyzeMatches(filteredMatch));
+            //}
+
+            //foreach (var collection in matchCollection)
+            //{
+            //    AnalyzedMatchesManager.AddAnalyzedMatches(collection);
+            //}
+
+            //Console.WriteLine("");
+            //Console.WriteLine("Match analysis complete.");
+            //Console.WriteLine("");
+
+            //List<MatchMetrics> highlights = new List<MatchMetrics>();
+            //List<MatchMetrics> matches = new List<MatchMetrics>();
+            //foreach (var match in AnalyzedMatchesManager.AnalyzedMatches)
+            //{
+            //    if (match.Match.IsInstantReplay)
+            //    {
+            //        highlights.Add(match);
+            //    }
+            //    else
+            //    {
+            //        matches.Add(match);
+            //    }
+            //}
+
+            /*
 
             BroadcastFilter broadcastFilter = new BroadcastFilter();
 
@@ -94,6 +166,8 @@ namespace HighlightGenerator
             //TODO analyze matches
 
             //TODO send analysis to deep learning script
+
+            */
 
         }
     }

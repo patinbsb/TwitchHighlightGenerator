@@ -33,7 +33,7 @@ namespace HighlightGenerator
 
         public string GetDirectoryPath()
         {
-            return Helper.BroadcastsPath + Broadcast.Id + "//";
+            return Helper.BroadcastsPath + Broadcast.Id + "\\";
         }
     }
 }

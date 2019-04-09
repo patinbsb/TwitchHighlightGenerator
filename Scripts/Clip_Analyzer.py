@@ -2,6 +2,7 @@ import os
 import cv2
 import copy
 from skimage.measure import compare_ssim
+import sys
 
 current_directory_path = os.path.dirname(os.path.abspath(__file__))
 
@@ -48,7 +49,7 @@ def capture_kill_differences(cap, display_matched_frames=False):
                 # Check frame differences are below a certain threshold and the control is unchanged
                 if diff_score_blue < 0.75 and diff_control_icon > 0.75:
                     # kill change registered on this frame
-                    kills_over_time.append(current_frame)
+                    kills_over_time.append(convert_frame_to_time(current_frame))
                     if display_matched_frames is True:
                         cv2.imshow('curr different', blue_score)
                         cv2.imshow('prev different', prev_blue_score)
@@ -59,7 +60,7 @@ def capture_kill_differences(cap, display_matched_frames=False):
 
                 if diff_score_red < 0.75 and diff_control_icon > 0.75:
                     # kill change registered on this frame
-                    kills_over_time.append(current_frame)
+                    kills_over_time.append(convert_frame_to_time(current_frame))
                     if display_matched_frames is True:
                         cv2.imshow('curr different', red_score)
                         cv2.imshow('prev different', prev_red_score)
@@ -216,7 +217,7 @@ def capture_ultimate_usage(cap, display_matched_frames=False):
                 # Filter out radical ult usage
                 if len(ult_use_positions) < 3 and len(ult_use_positions) > 0:
 
-                    ult_usage_over_time.append([current_frame, ult_use_positions])
+                    ult_usage_over_time.append([convert_frame_to_time(current_frame), ult_use_positions])
 
                 prev_red_team_frames = copy.deepcopy(red_team_frames)
                 prev_blue_team_frames = copy.deepcopy(blue_team_frames)
@@ -229,72 +230,161 @@ def capture_ultimate_usage(cap, display_matched_frames=False):
 
     return ult_usage_over_time
 
-# Get files in current directory
-clips = os.listdir()
+
+def capture_objectives(cap, display_matched_frames = False):
+    blue_turret_path = current_directory_path + "\\turret_blue.png"
+    baron_path = current_directory_path + "\\baron.png"
+    dragon_path = current_directory_path + "\\dragon.png"
+    dragon_path2 = current_directory_path + "\\dragon2.png"
+    dragon_path3 = current_directory_path + "\\dragon3.png"
+    inhibitor_path = current_directory_path + "\\inhibitor.png"
+    blue_turret_template = cv2.imread(blue_turret_path, 0)
+    baron_template = cv2.imread(baron_path, 0)
+    dragon_template = cv2.imread(dragon_path, 0)
+    dragon2_template = cv2.imread(dragon_path2, 0)
+    dragon3_template = cv2.imread(dragon_path3, 0)
+    inhibitor_template = cv2.imread(inhibitor_path, 0)
+
+    target_threshold = 0.90
+    turret_frames = []
+    baron_frames = []
+    dragon_frames = []
+    inhibitor_frames = []
+    current_frame = 1
+    turret_found = False
+    baron_found = False
+    dragon_found = False
+    inhibitor_found = False
+    turret_timer = 30
+    baron_timer = 30
+    dragon_timer = 30
+    inhibitor_timer = 30
+    while cap.isOpened():
+        ret, frame = cap.read()
+        if turret_found and turret_timer > 0:
+            turret_timer -= 1
+        else:
+            turret_found = False
+            turret_timer = 30
+
+        if baron_found and baron_timer > 0:
+            baron_timer -= 1
+        else:
+            baron_found = False
+            baron_timer = 30
+
+        if dragon_found and dragon_timer > 0:
+            dragon_timer -= 1
+        else:
+            dragon_found = False
+            dragon_timer = 30
+
+        if inhibitor_found and inhibitor_timer > 0:
+            inhibitor_timer -= 1
+        else:
+            inhibitor_found = False
+            inhibitor_timer = 30
+        if ret is True:
+            grey_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            grey_frame = grey_frame[307:346, 713:755]
+            res_turret = cv2.matchTemplate(grey_frame, blue_turret_template, cv2.TM_CCOEFF_NORMED)
+            res_baron = cv2.matchTemplate(grey_frame, baron_template, cv2.TM_CCOEFF_NORMED)
+            res_dragon = cv2.matchTemplate(grey_frame, dragon_template, cv2.TM_CCOEFF_NORMED)
+            res_dragon2 = cv2.matchTemplate(grey_frame, dragon2_template, cv2.TM_CCOEFF_NORMED)
+            res_dragon3 = cv2.matchTemplate(grey_frame, dragon3_template, cv2.TM_CCOEFF_NORMED)
+            res_inhibitor = cv2.matchTemplate(grey_frame, inhibitor_template, cv2.TM_CCOEFF_NORMED)
+
+            _, max_threshold, _, max_location = cv2.minMaxLoc(res_turret)
+            if max_threshold >= target_threshold and turret_found is False:
+                turret_found = True
+                turret_frames.append(convert_frame_to_time(current_frame))
+                if display_matched_frames:
+                    cv2.imshow('turret', frame)
+                    if cv2.waitKey(0) & 0xFF == ord('q'):
+                        continue
+
+            _, max_threshold, _, max_location = cv2.minMaxLoc(res_baron)
+            if max_threshold >= target_threshold and baron_found is False:
+                baron_found = True
+                baron_frames.append(convert_frame_to_time(current_frame))
+                if display_matched_frames:
+                    cv2.imshow('baron', frame)
+                    if cv2.waitKey(0) & 0xFF == ord('q'):
+                        continue
+
+            _, max_threshold, _, max_location = cv2.minMaxLoc(res_dragon)
+            _, max_threshold2, _, max_location = cv2.minMaxLoc(res_dragon2)
+            _, max_threshold3, _, max_location = cv2.minMaxLoc(res_dragon3)
+            if (max_threshold >= target_threshold or max_threshold2 >= target_threshold or max_threshold3 >= target_threshold) and dragon_found is False:
+                dragon_found = True
+                dragon_frames.append(convert_frame_to_time(current_frame))
+                if display_matched_frames:
+                    cv2.imshow('dragon', frame)
+                    if cv2.waitKey(0) & 0xFF == ord('q'):
+                        continue
+
+            _, max_threshold, _, max_location = cv2.minMaxLoc(res_inhibitor)
+            if max_threshold >= target_threshold and inhibitor_found is False:
+                inhibitor_found = True
+                inhibitor_frames.append(convert_frame_to_time(current_frame))
+                if display_matched_frames:
+                    cv2.imshow('inhibitor', frame)
+                    if cv2.waitKey(0) & 0xFF == ord('q'):
+                        continue
+        if ret is False:
+            cap.release()
+            return turret_frames, baron_frames, dragon_frames, inhibitor_frames;
+        current_frame += 1
+
+def convert_frame_to_time(frame):
+    return float(float(frame) / 30.0)
+
+
+def main(match_to_process, kill_path, ultimate_path, turret_path, baron_path, dragon_path, inhibitor_path):
+    match_ultimate_frames = []
+    matched_kill_frames = []
+    matched_turret_frames = []
+    matched_baron_frames = []
+    matched_dragon_frames = []
+    matched_inhibitor_frames = []
+
+    cap = cv2.VideoCapture(match_to_process)
+    matched_turret_frames, matched_baron_frames, matched_dragon_frames, matched_inhibitor_frames = capture_objectives(cap)
+
+    cap = cv2.VideoCapture(match_to_process)
+    match_ultimate_frames = capture_ultimate_usage(cap)
+
+    cap = cv2.VideoCapture(match_to_process)
+    matched_kill_frames = capture_kill_differences(cap)
+
+    with open(kill_path, 'w') as kill_json:
+        for kill in matched_kill_frames:
+            kill_json.write(str(kill) + "\n")
+
+    with open(ultimate_path, 'w') as ultimate_json:
+        for ultimate in match_ultimate_frames:
+            ultimate_json.write(str(ultimate[0]) + "\n")
+
+    with open(turret_path, 'w') as turret_file:
+        for turret in matched_turret_frames:
+            turret_file.write(str(turret) + "\n")
+
+    with open(baron_path, 'w') as baron_file:
+        for baron in matched_baron_frames:
+            baron_file.write(str(baron) + "\n")
+
+    with open(dragon_path, 'w') as dragon_file:
+        for dragon in matched_dragon_frames:
+            dragon_file.write(str(dragon) + "\n")
+
+    with open(inhibitor_path, 'w') as inhibitor_file:
+        for inhibitor in matched_inhibitor_frames:
+            inhibitor_file.write(str(inhibitor) + "\n")
 
 
 
-highlights = []
-matches = []
-
-# We filter out matches and clips
-for clip in clips:
-    if 'highlight' in clip and '.mp4' in clip:
-        highlights.append(clip)
-    if 'match' in clip and '.mp4' in clip:
-        matches.append(clip)
-
-# # Process number of kills in each highlight
-# highlight_kill_frames = []
-# highlight_ultimate_frames = []
-# for highlight in highlights:
-#     video_to_process = current_directory_path + '\\' + highlight
-#
-#     # Load the video into cv2
-#     cap = cv2.VideoCapture(video_to_process)
-#     print('processing ultimate usage: ' + highlight)
-#     ultimate_frames = capture_ultimate_usage(cap)
-#     highlight_ultimate_frames.append((highlight, ultimate_frames))
-#
-#     # Load the video into cv2
-#     cap = cv2.VideoCapture(video_to_process)
-#     print('processing kill count: ' + highlight)
-#     kill_frames = capture_kill_differences(cap)
-#     highlight_kill_frames.append((highlight, kill_frames))
-#
-# for highlight_name in highlight_kill_frames:
-#     print(highlight_name[0])
-#     print(len(highlight_name[1]))
-
-# Process number of kills in each match
-match_kill_frames = []
-match_ultimate_frames = []
-for match in matches:
-    video_to_process = current_directory_path + '\\' + match
-
-    # Load the video into cv2
-    cap = cv2.VideoCapture(video_to_process)
-    print('processing ultimate usage: ' + match)
-    ultimate_frames = capture_ultimate_usage(cap)
-    match_ultimate_frames.append((match, ultimate_frames))
-
-    # Load the video into cv2
-    cap = cv2.VideoCapture(video_to_process)
-    print('processing kill count: ' + match)
-    kill_frames = capture_kill_differences(cap)
-    match_kill_frames.append((match, kill_frames))
-
-for matched_kill_frame in match_kill_frames:
-    match_name = matched_kill_frame[0]
-    kill_frames = matched_kill_frame[1]
-    print('Kill count: ' + match_name)
-    print(len(kill_frames))
-
-for match_ultimate_frames in match_ultimate_frames:
-    match_name = match_ultimate_frames[0]
-    positions_teams_and_frames_of_matched_ultimate = match_ultimate_frames[1]
-    print('Ultimate usage: ' + match_name)
-    print(len(positions_teams_and_frames_of_matched_ultimate))
+if __name__ == "__main__":
+    main(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5], sys.argv[6], sys.argv[7])
 
 
 #TODO grade ultimate score on a scale of sum(player ults) = sum 1/(total_player_ults) = 1.0

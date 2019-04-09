@@ -13,6 +13,7 @@ namespace HighlightGenerator
         public static string RootPath = ConfigurationManager.AppSettings["RootPath"];
         public static string ScriptsPath = ConfigurationManager.AppSettings["ScriptsPath"];
         public static string BroadcastsPath = ConfigurationManager.AppSettings["BroadcastsPath"];
+        public static string AnalyzedBroadcastsPath = ConfigurationManager.AppSettings["AnalyzedBroadcastsPath"];
         public static string FilterTemplatePath = ConfigurationManager.AppSettings["FilterTemplatePath"];
         public static string TwitchVodsPath = ConfigurationManager.AppSettings["TwitchVodsPath"];
         public static string PythonInterpreterPath = ConfigurationManager.AppSettings["PythonInterpreterPath"];

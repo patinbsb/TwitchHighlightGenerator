@@ -14,7 +14,7 @@ and a new video output is started. This will segregate videos into separate matc
 
 def filter_video_by_template(video_to_process, output_path, filter_template='C:\\Twitch VODs\\template.png',
                              filter_threshold=0.9, starting_frame=1, frames_to_skip=15,
-                             convert_to_greyscale=True, print_progress=True,
+                             convert_to_greyscale=False, print_progress=True,
                              display_matched_frames=False, seconds_until_timeout=120, seconds_minimum_match_length=600
                              ):
     default_output = 'output.mp4'
@@ -184,6 +184,12 @@ def matched_ranges_to_total_seconds(matched_ranges):
         output += time_range[1] - time_range[0]
     return output
 
+def string_to_bool(input):
+    if input == 'True':
+        return True
+    else:
+        return False
+
 
 def main(video_to_process, output_path, filter_template,
          filter_threshold, starting_frame, frames_to_skip,
@@ -198,5 +204,6 @@ def main(video_to_process, output_path, filter_template,
 if __name__ == "__main__":
     main(sys.argv[1], sys.argv[2], sys.argv[3],
          float(sys.argv[4]), int(sys.argv[5]), int(sys.argv[6]),
-         bool(sys.argv[7]), int(sys.argv[8]), int(sys.argv[9]))
+         string_to_bool(sys.argv[7]), int(sys.argv[8]), int(sys.argv[9]))
+
 

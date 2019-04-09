@@ -27,7 +27,7 @@ namespace HighlightGenerator
             this.SecondsMinimumMatchLength = secondsMinimumMatchLength;
         }
 
-        // Load from default configuration values.
+        // LoadFromFiles from default configuration values.
         public BroadcastFilter()
         {
             this.FilterTemplatePath = ConfigurationManager.AppSettings["FilterTemplatePath"];
@@ -66,6 +66,8 @@ namespace HighlightGenerator
             List<Broadcast> broadcasts = new List<Broadcast>();
             foreach (var video in videosToProcess)
             {
+                Console.WriteLine($"Found unprocessed video: {video}");
+
                 // Extracting metadata from video filename
                 var videoInfo = video.Split('_');
 
@@ -91,9 +93,6 @@ namespace HighlightGenerator
                     }
                 }
 
-                Console.WriteLine($"Found unprocessed video: {video}");
-
-
                 videoFilterTasks.Add(new Task(() => FilterVideo(video, outputPath, FilterTemplatePath, FilterThreshold, StartingFrame,
                     FramesToSkip, ConvertToGreyscale, SecondsUntilTimeout, SecondsMinimumMatchLength)));
             }
@@ -105,7 +104,7 @@ namespace HighlightGenerator
             foreach (var broadcast in broadcasts)
             {
                 Console.WriteLine($"processing {broadcast.Id}'s chat-log");
-                //ChatLogParser.GenerateChatRows(broadcast);
+                ChatLogParser.GenerateChatRows(broadcast);
             }
 
             Console.WriteLine("chat-log processing completed.");
@@ -284,7 +283,7 @@ namespace HighlightGenerator
 
                                             while (!reader.EndOfStream)
                                             {
-                                                // Load from csv into a segment list.
+                                                // LoadFromFiles from csv into a segment list.
                                                 var lines = reader.ReadLine().Split(',');
                                                 double segmentStart = double.Parse(lines[0]);
                                                 double segmentEnd = double.Parse(lines[1]);
@@ -310,7 +309,7 @@ namespace HighlightGenerator
                                     DateTime startTime = broadcast.StartTime.AddSeconds(startEndTimes[0].StartTime);
 
                                     // Done!
-                                    matches.Add(new Match(startTime, int.Parse(matchNumber.Value), isInstantReplay, startEndTimes));
+                                    matches.Add(new Match(startTime, int.Parse(matchNumber.Value), broadcast.Id, isInstantReplay, startEndTimes));
                                 }
 
                             }

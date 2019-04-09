@@ -9,13 +9,13 @@ namespace HighlightGenerator
 {
     public class MatchMetric
     {
-        public MatchMetric(TimeSpan timeStamp, double score)
+        public MatchMetric(double timeStamp, double score)
         {
             this.TimeStamp = timeStamp;
             this.Score = score;
         }
 
-        public TimeSpan TimeStamp { get; set; }
+        public double TimeStamp { get; set; }
         public double Score { get; set; }
     }
 }

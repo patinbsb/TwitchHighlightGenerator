@@ -11,3 +11,7 @@ C:\Users\patin_000\Source\Repos\DSP\TwitchBackend\HighlightGenerator\HighlightGe
 C:\Users\patin_000\Source\Repos\DSP\TwitchBackend\HighlightGenerator\HighlightGenerator\bin\Debug\Newtonsoft.Json.dll
 C:\Users\patin_000\Source\Repos\DSP\TwitchBackend\HighlightGenerator\HighlightGenerator\bin\Debug\Newtonsoft.Json.pdb
 C:\Users\patin_000\Source\Repos\DSP\TwitchBackend\HighlightGenerator\HighlightGenerator\bin\Debug\Newtonsoft.Json.xml
+C:\Users\patin_000\source\repos\DSP\TwitchBackend\HighlightGenerator\HighlightGenerator\bin\Debug\MySql.Data.dll
+C:\Users\patin_000\source\repos\DSP\TwitchBackend\HighlightGenerator\HighlightGenerator\bin\Debug\System.ValueTuple.dll
+C:\Users\patin_000\source\repos\DSP\TwitchBackend\HighlightGenerator\HighlightGenerator\bin\Debug\Google.Protobuf.dll
+C:\Users\patin_000\source\repos\DSP\TwitchBackend\HighlightGenerator\HighlightGenerator\bin\Debug\MySql.Data.xml
