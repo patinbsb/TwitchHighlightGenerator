@@ -19,7 +19,7 @@ namespace HighlightGenerator
         private string tensorflowPath = ConfigurationManager.AppSettings["TensorflowDataPath"];
 
         private string tensorflowPythonInterpreterPath =
-            ConfigurationManager.AppSettings["TensofrflowPythonInterpreterPath"];
+            ConfigurationManager.AppSettings["TensorflowPythonInterpreterPath"];
         private string deepLearnerScriptPath = ConfigurationManager.AppSettings["ScriptsPath"] + "DeepLearningModel.py";
         private int secondsChunkSize = 1;
 
