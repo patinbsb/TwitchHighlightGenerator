@@ -66,6 +66,8 @@
     <Compile Include="AnalyzedMatchesManager.cs" />
     <Compile Include="FilteredMatchesManager.cs" />
     <Compile Include="Helper.cs" />
+    <Compile Include="HighlightInfo.cs" />
+    <Compile Include="HighlightMaker.cs" />
     <Compile Include="Match.cs" />
     <Compile Include="MatchAnalyzer.cs" />
     <Compile Include="MatchMetric.cs" />

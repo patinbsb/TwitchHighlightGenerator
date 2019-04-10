@@ -45,5 +45,5 @@ def main(match_to_process, score_output_path):
                 json.dump(score, output)
 
 if __name__ == "__main__":
-    main('C:\\Users\\patin_000\\source\\repos\\DSP\\Broadcasts\\317396487\\match4.mp4', 'C:\\Users\\patin_000\\source\\repos\\DSP\\Analyzed Broadcasts\\Manual training data\\317396487_match4.txt')
+    main('C:\\Users\\patin_000\\source\\repos\\DSP\\Broadcasts\\325392389\\match7.mp4', 'C:\\Users\\patin_000\\source\\repos\\DSP\\TensorflowData\\Unprocessed\\325392389_match7.txt')
     #main(sys.argv[1], sys.argv[2])

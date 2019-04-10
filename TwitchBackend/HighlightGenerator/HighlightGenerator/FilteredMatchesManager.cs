@@ -13,7 +13,7 @@ namespace HighlightGenerator
     {
         private static string BroadcastPath = ConfigurationManager.AppSettings["BroadcastsPath"];
         private static string FilteredMatchesJson = "FilteredMatches.json";
-        public static List<FilteredMatches> FilteredMatches { get; set; }
+        public static List<FilteredMatches> FilteredMatches { get; set; } = new List<FilteredMatches>();
 
         // Loads in the filteredMatch list file
         public static void loadFromJson()
@@ -74,5 +74,7 @@ namespace HighlightGenerator
             }
             File.WriteAllText(BroadcastPath + FilteredMatchesJson, JsonConvert.SerializeObject(FilteredMatches));
         }
+
+
     }
 }

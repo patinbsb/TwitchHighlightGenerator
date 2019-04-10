@@ -43,20 +43,24 @@ namespace HighlightGenerator
             string broadcastsPath = rootPath + "Broadcasts\\";
             string analyzedMatchesPath = rootPath + "Analyzed Broadcasts\\";
             string tensorflowDataPath = rootPath + "TensorflowData\\";
+            string highlightVideosPath = rootPath + "HighlightVideos\\";
             ConfigurationManager.AppSettings["BroadcastsPath"] = broadcastsPath;
             ConfigurationManager.AppSettings["AnalyzedMatchesPath"] = analyzedMatchesPath;
             ConfigurationManager.AppSettings["TensorflowDataPath"] = tensorflowDataPath;
+            ConfigurationManager.AppSettings["HighlightVideosPath"] = highlightVideosPath;
 
             //TODO this needs to be made machine agnostic
             // We locate the python interpreter location.
             var pythonPath = "C:\\Users\\patin_000\\Anaconda3\\python.exe";
+            var tensorflowPythonPath = "C:\\Users\\patin_000\\Anaconda3\\envs\\tf-gpu\\python.exe";
             ConfigurationManager.AppSettings["PythonInterpreterPath"] = pythonPath;
+            ConfigurationManager.AppSettings["TensofrflowPythonInterpreterPath"] = tensorflowPythonPath;
 
             // We check the Twitch VOD folder for pending videos.
             string twitchVodsPath = ConfigurationManager.AppSettings["TwitchVodsPath"];
 
             // Initialise existing broadcast data from previous sessions.
-            FilteredMatchesManager.loadFromJson();
+            //FilteredMatchesManager.loadFromJson();
 
             // Check for new videos to process.
             var files = Directory.GetFiles(twitchVodsPath);
@@ -71,39 +75,92 @@ namespace HighlightGenerator
                 }
             }
 
-            Console.WriteLine("");
-            Console.WriteLine("Analyzing matches.");
-            Console.WriteLine("");
+            //var filteredMatches = new BroadcastFilter().FilterBroadcasts(videosToProcess);
 
+            //foreach (var filteredMatch in filteredMatches)
+            //{
+            //    if (!filteredMatch.isPopulated)
+            //    {
+            //        filteredMatch.PopulateMatchChatLogs();
+            //    }
+            //}
+
+
+
+            //FilteredMatchesManager.AddFilteredMatches(filteredMatches);
+
+            //var matchAnalyzer = new MatchAnalyzer();
+            //var matchCollection = new List<List<MatchMetrics>>();
+
+            //Console.WriteLine("");
+            //Console.WriteLine("Analyzing matches.");
+            //Console.WriteLine("");
+
+            //foreach (var filteredMatch in FilteredMatchesManager.FilteredMatches)
+            //{
+            //    matchCollection.Add(matchAnalyzer.AnalyzeMatches(filteredMatch));
+            //}
+
+            //foreach (var collection in matchCollection)
+            //{
+            //    AnalyzedMatchesManager.AddAnalyzedMatches(collection);
+            //}
+
+            //Console.WriteLine("");
+            //Console.WriteLine("Match analysis complete.");
+            //Console.WriteLine("");
+
+
+            FilteredMatchesManager.loadFromJson();
             AnalyzedMatchesManager.LoadFromFiles();
-
-            var analyzedMatches = AnalyzedMatchesManager.AnalyzedMatches;
-
-            var highlights = new List<MatchMetrics>();
-            var trainingData = new List<MatchMetrics>();
-            foreach (var match in analyzedMatches)
-            {
-                if (match.Match.IsInstantReplay)
-                {
-                    highlights.Add(match);
-                }
-
-                if (match.Match.BroadcastId == 317396487 &&
-                    (match.Match.Id == 1 || match.Match.Id == 2 || match.Match.Id == 3 || match.Match.Id == 4))
-                {
-                    trainingData.Add(match);
-                }
-            }
-
+            AnalyzedMatchesManager.SaveToJson();
 
             var deepLearner = new DeepLearner();
+            var highlightGenerator = new HighlightMaker();
 
-            deepLearner.PrepareHighlightsForTensorFlow(highlights);
-
-            foreach (var match in trainingData)
+            foreach (var match in AnalyzedMatchesManager.AnalyzedMatches)
             {
-                deepLearner.PrepareMatchForTensorFlow(match);
+                if (!match.Match.IsInstantReplay)
+                {
+                    var highlightInfo = deepLearner.GetHighlightPeriod(match);
+                    var highlightVideoPath = highlightGenerator.CreateHighlight(highlightInfo, match.Match);
+                }
             }
+
+            
+
+            //var analyzedMatches = AnalyzedMatchesManager.AnalyzedMatches;
+
+            //var highlights = new List<MatchMetrics>();
+            //var trainingData = new List<MatchMetrics>();
+            //foreach (var match in analyzedMatches)
+            //{
+            //    if (match.Match.IsInstantReplay)
+            //    {
+            //        highlights.Add(match);
+            //    }
+
+            //    if (match.Match.BroadcastId == 325392389 && !match.Match.IsInstantReplay &&
+            //        (match.Match.Id == 6 || match.Match.Id == 7 || match.Match.Id == 5 || match.Match.Id == 4 || match.Match.Id == 3 || match.Match.Id == 2 || match.Match.Id == 1 ))
+            //    {
+            //        trainingData.Add(match);
+            //    }
+            //}
+
+
+            //var deepLearner = new DeepLearner();
+
+            //deepLearner.PrepareHighlightsForTensorFlow(highlights);
+
+            //foreach (var match in trainingData)
+            //{
+            //    if (false)
+            //    { deepLearner.PrepareMatchForTensorFlow(match, false);}
+            //    else
+            //    {
+            //        deepLearner.PrepareMatchForTensorFlow(match, true);
+            //    }
+            //}
 
 
 

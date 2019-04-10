@@ -286,7 +286,7 @@ namespace HighlightGenerator
             return path.Replace(@"\", @"\\");
         }
 
-        private double convertVideoTimeToMatchOffset(double videoTime, Match match)
+        public double convertVideoTimeToMatchOffset(double videoTime, Match match)
         {
             double convertedTime;
             var videoStart = match.Segments[0].StartTime;

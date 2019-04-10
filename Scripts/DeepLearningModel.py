@@ -1,239 +1,165 @@
 import sys
 import os
-import re
-import tensorflow as tf
-import tensorflow.keras as keras
+import keras
 import numpy as np
+from keras.models import model_from_json
+from keras import backend
+import tensorflow as tf
+
+
 
 current_directory_path = os.path.dirname(os.path.abspath(__file__))
+config = tf.ConfigProto()
+config.gpu_options.allow_growth = True
+session = tf.Session(config=config)
 
-def load_data():
+def load_data(file_name, training):
+
     os.chdir(current_directory_path)
     os.chdir("..")
-    os.chdir("Analyzed Broadcasts\\")
+    if training:
+        os.chdir("TensorflowData\\TrainingData\\")
+    else:
+        os.chdir("TensorflowData\\EvaluationData\\")
     base_path = os.getcwd()
-    dirs = os.listdir(os.getcwd())
+
     data = []
+    with open(base_path + "\\" + file_name, "r") as file:
+        for line in file:
+            data.append(line.split(","))
 
-    for dir in dirs:
-        if dir.isnumeric():
-            os.chdir(dir)
-            data.append([dir, os.listdir(os.getcwd())])
-            os.chdir("..")
-
-    # Seperate content out into highlight and matches.
-    hightlights = []
-    matches = []
-    for broadcast in data:
-        hightlights.append([broadcast[0]])
-        matches.append([broadcast[0]])
-        for match in broadcast[1]:
-            if 'highlight' in match:
-                hightlights[-1].append(match)
-            else:
-                matches[-1].append(match)
-
-    # Further eperate highlights and matches by their id highlight1, highlight2 ect
-    segregated_highlights = {}
-    segregated_matches = {}
-
-    for collection in hightlights:
-        segregated_highlights[collection[0]] = {}
-
-    for collection in hightlights:
-        first = True
-        for hightlight in collection:
-            if first:
-                first = False
-                continue
-            number = re.findall(r'\d+', hightlight)[0]
-            if number in segregated_highlights[collection[0]].keys():
-                segregated_highlights[collection[0]][number].append(hightlight)
-            else:
-                segregated_highlights[collection[0]][number] = []
-                segregated_highlights[collection[0]][number].append(hightlight)
-
-
-
-
-    for collection in matches:
-        segregated_matches[collection[0]] = {}
-
-    for collection in matches:
-        first = True
-        for hightlight in collection:
-            if first:
-                first = False
-                continue
-            number = re.findall(r'\d+', hightlight)[0]
-            if number in segregated_matches[collection[0]].keys():
-                segregated_matches[collection[0]][number].append(hightlight)
-            else:
-                segregated_matches[collection[0]][number] = []
-                segregated_matches[collection[0]][number].append(hightlight)
-
-    sum_total = 0
-    sum_baron = 0
-    sum_dragon = 0
-    sum_inhibitor = 0
-    sum_kills = 0
-    sum_turrets = 0
-    sum_ultimates = 0
-
-    # load each segment's file information into
-
-    for folder in segregated_highlights.keys():
-        for metric_group_path in segregated_highlights[folder].keys():
-            for file_path in segregated_highlights[folder][metric_group_path]:
-                with open(base_path + "\\" + folder + "\\" + file_path) as file:
-                    input_raw = file.readlines()
-                    sum = 0
-                    # I sum each highlight video as they generally cover a 10 second period.
-                    for item in input_raw:
-                        sum += 1
-                    sum_total += sum
-                    if "baron" in file_path:
-                        sum_baron += sum
-                    if "dragon" in file_path:
-                        sum_dragon += sum
-                    if "inhibitor" in file_path:
-                        sum_inhibitor += sum
-                    if "kills" in file_path:
-                        sum_kills += sum
-                    if "turrets" in file_path:
-                        sum_turrets += sum
-                    if "ultimates" in file_path:
-                        sum_ultimates += sum
-
-
-    metric_group_highlights = []
-    for folder in segregated_highlights.keys():
-        for metric_group_path in segregated_highlights[folder].keys():
-            metric_group_highlights.append({})
-            for file_path in segregated_highlights[folder][metric_group_path]:
-                with open(base_path + "\\" + folder + "\\" + file_path) as file:
-                    input_raw = file.readlines()
-                    sum = 0
-                    # I sum each highlight video as they generally cover a 10 second period.
-                    for item in input_raw:
-                        sum += 1
-                    if "baron" in file_path:
-                        metric_group_highlights[-1]["baron"] = sum / sum_baron
-                    if "dragon" in file_path:
-                        metric_group_highlights[-1]["dragon"] = sum / sum_dragon
-                    if "inhibitor" in file_path:
-                        metric_group_highlights[-1]["inhibitor"] = sum / sum_inhibitor
-                    if "kills" in file_path:
-                        metric_group_highlights[-1]["kills"] = sum / sum_kills
-                    if "turrets" in file_path:
-                        metric_group_highlights[-1]["turrets"] = sum / sum_turrets
-                    if "ultimates" in file_path:
-                        metric_group_highlights[-1]["ultimates"] = sum / sum_ultimates
-
-    metric_group_matches = []
-    for folder in segregated_matches.keys():
-        for metric_group_path in segregated_matches[folder].keys():
-            metric_group_matches.append({})
-            for file_path in segregated_matches[folder][metric_group_path]:
-                with open(base_path + "\\" + folder + "\\" + file_path) as file:
-                    input_raw = file.readlines()
-                    lines = []
-                    for item in input_raw:
-                        lines.append(float(item))
-                    if "baron" in file_path:
-                        metric_group_matches[-1]["baron"] = (lines)
-                    if "dragon" in file_path:
-                        metric_group_matches[-1]["dragon"] = (lines)
-                    if "inhibitor" in file_path:
-                        metric_group_matches[-1]["inhibitor"] = (lines)
-                    if "kills" in file_path:
-                        metric_group_matches[-1]["kills"] = (lines)
-                    if "turrets" in file_path:
-                        metric_group_matches[-1]["turrets"] = (lines)
-                    if "ultimates" in file_path:
-                        metric_group_matches[-1]["ultimates"] = (lines)
-
-    setp = []
-    for i in range(0, len(metric_group_highlights)):
-        vals = list(metric_group_highlights[i].values())
+    cleanData = []
+    for entry in data:
         temp = []
-        for j in range(0, len(vals)):
-            temp.append(vals[j])
-        setp.append(temp)
-    array_highlights = np.array(setp, dtype=np.float64)
+        for item in entry:
+            temp.append(float(item))
+        cleanData.append(temp)
+    output = np.array(cleanData, dtype=np.float64)
+
+    output = output / np.linalg.norm(output)
+
+    return output
 
 
-    return metric_group_matches, array_highlights
+def load_labels(file_name):
+    os.chdir(current_directory_path)
+    os.chdir("..")
+    os.chdir("TensorflowData\\")
+    base_path = os.getcwd()
 
-def shape_data(data):
+    data = []
+    with open(base_path + "\\" + file_name, "r") as file:
+        for line in file:
+            data.append(float(line))
+    output = np.array(data, dtype=np.float64)
 
-    max_length = 0
-    for unit in data:
-        for item in unit.values():
-            if len(item) > max_length:
-                max_length = len(item)
-        for item in unit.values():
-            difference = max_length - len(item)
-            for i in range(0, difference):
-                item.append(0.0)
-
-    setp = []
-    for i in range(0, len(data)):
-        vals = list(data[i].values())
-        temp = []
-        for k in range(0, len(vals[0])):
-            for j in range(0, len(vals)):
-                temp.append(vals[j][k])
-            setp.append(temp)
-            temp = []
-    array = np.array(setp, dtype=np.float64)
-
-    return array
-
-def main():
-    matches, highlights = load_data()
-
-    #clean_highlights = shape_data(highlights)
-    #clean_highlights.shape
-    clean_labels = np.full((153, 1), 0.7)
+    return output
 
 
-    
-    # Training data and labels
-    #data = np.random.random((1000, 32))
-    #labels = np.random.random((1000, 10))
+def train_model():
+    trainingData = load_data("317396487match1.csv")
+    np.append (trainingData, load_data("317396487match2.csv"))
+    np.append(trainingData, load_data("317396487match3.csv"))
+    np.append(trainingData, load_data("317396487match4.csv"))
+    np.append(trainingData, load_data("325392389match1.csv"))
+    np.append(trainingData, load_data("325392389match2.csv"))
+    np.append(trainingData, load_data("325392389match3.csv"))
+    np.append(trainingData, load_data("325392389match4.csv"))
+    np.append(trainingData, load_data("325392389match5.csv"))
+    np.append(trainingData, load_data("325392389match6.csv"))
+    np.append(trainingData, load_data("325392389match7.csv"))
 
-    # Validation data and labels
-    #val_data = np.random.random((1000, 32))
-    #val_labels = np.random.random((1000, 10))
+    labels = load_labels("317396487match1_training.csv")
+    np.append(labels, load_labels("317396487match2_training.csv"))
+    np.append(labels, load_labels("317396487match3_training.csv"))
+    np.append(labels, load_labels("317396487match4_training.csv"))
+    np.append(labels, load_labels("325392389match1_training.csv"))
+    np.append(labels, load_labels("325392389match2_training.csv"))
+    np.append(labels, load_labels("325392389match3_training.csv"))
+    np.append(labels, load_labels("325392389match4_training.csv"))
+    np.append(labels, load_labels("325392389match5_training.csv"))
+    np.append(labels, load_labels("325392389match6_training.csv"))
+    np.append(labels, load_labels("325392389match7_training.csv"))
+
+    validationData = load_data("317396487match5.csv")
+    validationLabels = load_data("317396487match5_training.csv")
+
+    highlights_data = load_data("highlights.csv")
+    highlights_labels = np.random.uniform(0.5, 1.0, highlights_data.shape[0])
+    np.append(trainingData, highlights_data)
+    np.append(labels, highlights_labels)
 
     # Model architecture
     model = keras.Sequential([
-    keras.layers.Dense(64, activation='relu', input_shape=(6,)),
-    keras.layers.Dense(64, activation='relu'),
-    keras.layers.Dense(1, activation='softmax')])
+    keras.layers.Dense(128, activation='relu', input_shape=(7,)),
+    keras.layers.Dense(128, activation='relu'),
+    keras.layers.Dense(1, activation='sigmoid')])
 
     # Compiling
-    model.compile(optimizer=tf.train.AdamOptimizer(0.01),
+    model.compile(optimizer=keras.optimizers.Adam(0.0005),
                   loss='mse',
-                  metrics=["mae"])
+                  metrics=["mae", "mse"])
 
     # Train model on data
-    model.fit(highlights, clean_labels, epochs=200, batch_size=1)
+    print("TRAINING")
+    model.fit(trainingData, labels, epochs=300, batch_size=5, validation_data=(validationData, validationLabels), verbose=2)
+    print("PREDICTING")
+    result = model.predict(validationData, batch_size=1)
+    print(result)
+    print("EVALUATING")
+    evalation = model.evaluate(validationData, validationLabels, steps=50)
+    print("test_loss = " + str(evalation[0]) + ", test_accuracy = " + str(evalation[1]))
 
-'''
-    # Another data form, datasets are scalable.
-    dataset = tf.data.Dataset.from_tensor_slices((data, labels))
-    dataset = dataset.batch(32).repeat()
+    return model
 
-    val_dataset = tf.data.Dataset.from_tensor_slices((val_data, val_labels))
-    val_dataset = val_dataset.batch(32).repeat()
 
-    # Validate model
-    model.fit(dataset, epochs=10, steps_per_epoch=30,
-              validation_data=val_dataset,
-              validation_steps=3)
-  '''
+def load_model():
+    json_file = open("model.json", "r")
+    loaded_model_json = json_file.read()
+    json_file.close()
+    loaded_model = model_from_json(loaded_model_json)
+    loaded_model.load_weights("model.h5")
+    loaded_model.compile(optimizer=keras.optimizers.Adam(0.0005),
+                  loss='mse',
+                  metrics=["mae", "mse"])
+    print("model loaded")
+    return loaded_model
+
+def save_model(model):
+    model_json = model.to_json()
+    with open("model.json", "w") as json_file:
+        json_file.write(model_json)
+    model.save_weights("model.h5")
+    print("model saved")
+
+def model_exists():
+    os.chdir(current_directory_path)
+    os.chdir("..")
+    os.chdir("TensorflowData\\")
+    return os.path.isfile("model.json")
+
+
+def main(video_data_path, predicted_data_path):
+    if not model_exists():
+        model = train_model()
+        save_model(model)
+    else:
+        model = load_model()
+
+    data = load_data(video_data_path, False)
+    highlight = model.predict(data)
+    outputList = highlight.tolist()
+
+    os.chdir(current_directory_path)
+    os.chdir("..")
+    os.chdir("TensorflowData\\Predictions\\")
+
+    with open(predicted_data_path, "w") as output:
+        output.write(('\n'.join(str(num[0]) for num in highlight)))
+
+    backend.clear_session()
+    session.close()
+
 
 if __name__ == "__main__":
-    main()
+    main(sys.argv[1], sys.argv[2])
