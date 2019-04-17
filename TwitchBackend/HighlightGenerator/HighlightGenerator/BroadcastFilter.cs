@@ -69,10 +69,9 @@ namespace HighlightGenerator
                 Console.WriteLine($"Found unprocessed video: {video}");
 
                 // Extracting metadata from video filename
-                var videoInfo = video.Split('_');
+                var videoInfo = video.Substring(video.LastIndexOf("\\")).Split('_');
 
                 var recordedDate = videoInfo[0];
-                recordedDate = recordedDate.Remove(0, Helper.TwitchVodsPath.Length);
 
                 var recordedTime = videoInfo[1];
                 DateTime videoRecordedDateTime = DateTime.ParseExact(recordedDate + recordedTime, "yyyyMMddHHmmss", System.Globalization.CultureInfo.InvariantCulture);
