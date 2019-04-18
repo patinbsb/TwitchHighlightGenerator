@@ -1,13 +1,9 @@
 ﻿using System;
-using System.CodeDom;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.IO.Compression;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
-using Newtonsoft.Json;
 
 namespace HighlightGenerator
 {
@@ -15,26 +11,8 @@ namespace HighlightGenerator
     {
         public static string ClipAnalyzerScriptPath = Helper.ScriptsPath + "Clip_Analyzer.py";
 
-        private object _lockProgress = new object();
-        private List<Tuple<string, string>> _taskProgress = new List<Tuple<string, string>>();
-
-        //public MatchAnalyzer(FilteredMatches filteredMatches, List<MatchMetric> killDifferences, List<MatchMetric> ultimateUsage, List<MatchMetric> chatRate)
-        //{
-        //    FilteredMatches = filteredMatches;
-        //    KillDifferences = killDifferences;
-        //    UltimateUsage = ultimateUsage;
-        //    ChatRate = chatRate;
-        //}
-
-        public MatchAnalyzer()
-        {
-
-        }
-
-        //public FilteredMatches FilteredMatches { get; set; }
-        //public List<MatchMetric> KillDifferences { get; set; }
-        //public List<MatchMetric> UltimateUsage { get; set; }
-        //public List<MatchMetric> ChatRate { get; set; }
+        private readonly object _lockProgress = new object();
+        private readonly List<Tuple<string, string>> _taskProgress = new List<Tuple<string, string>>();
 
         public List<MatchMetrics> AnalyzeMatches(FilteredMatches filteredMatches)
         {
@@ -81,7 +59,7 @@ namespace HighlightGenerator
         {
             string videoFilterScriptPathParam = ConvertToPythonPath(ClipAnalyzerScriptPath);
             string videoToProcessParam = ConvertToPythonPath(matchPath);
-            var analyzedPath = matchPath.Remove(matchPath.LastIndexOf("\\") + 1);
+            var analyzedPath = matchPath.Remove(matchPath.LastIndexOf("\\", StringComparison.Ordinal) + 1);
             analyzedPath = analyzedPath.Replace("Broadcasts", "Analyzed Broadcasts");
             var killsPath = analyzedPath + match.GetFileName(false) + "_kills.txt";
             var ultimatesPath = analyzedPath + match.GetFileName(false) + "_ultimates.txt";
@@ -91,17 +69,21 @@ namespace HighlightGenerator
             var inhibitorPath = analyzedPath + match.GetFileName(false) + "_inhibitor.txt";
             Directory.CreateDirectory(analyzedPath);
 
-            ProcessStartInfo start = new ProcessStartInfo();
-            start.FileName = Helper.PythonInterpreterPath;
-            start.Arguments = $"\"{videoFilterScriptPathParam}\" \"{videoToProcessParam}\" \"{ConvertToPythonPath(killsPath)}\" " +
-                              $"\"{ConvertToPythonPath(ultimatesPath)}\" \"{ConvertToPythonPath(turretsPath)}\" \"{ConvertToPythonPath(baronPath)}\" " +
-                              $"\"{ConvertToPythonPath(dragonPath)}\" \"{ConvertToPythonPath(inhibitorPath)}\"";
-            start.UseShellExecute = false;
-            start.RedirectStandardOutput = true;
-            start.RedirectStandardError = true;
+            ProcessStartInfo start = new ProcessStartInfo
+            {
+                FileName = Helper.PythonInterpreterPath,
+                Arguments =
+                    $"\"{videoFilterScriptPathParam}\" \"{videoToProcessParam}\" \"{ConvertToPythonPath(killsPath)}\" " +
+                    $"\"{ConvertToPythonPath(ultimatesPath)}\" \"{ConvertToPythonPath(turretsPath)}\" \"{ConvertToPythonPath(baronPath)}\" " +
+                    $"\"{ConvertToPythonPath(dragonPath)}\" \"{ConvertToPythonPath(inhibitorPath)}\"",
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true
+            };
 
             using (Process process = Process.Start(start))
             {
+                Debug.Assert(process != null, nameof(process) + " != null");
                 using (StreamReader reader = process.StandardOutput)
                 {
                     while (!reader.EndOfStream)
@@ -133,21 +115,20 @@ namespace HighlightGenerator
                         }
                         finally
                         {
-                            if (stream != null)
-                                stream.Close();
+                            stream?.Close();
                         }
 
                         //file is not locked
                         return false;
                     }
 
-                    if (!IsFileLocked(new FileInfo(matchPath)))
-                    {
-                        var csvPath = matchPath.Replace(".mp4", ".csv");
-                        //TODO undo this.
-                        //Directory.Move(matchPath, matchPath.Replace(Helper.BroadcastsPath, Helper.AnalyzedBroadcastsPath));
-                        //Directory.Move(csvPath, csvPath.Replace(Helper.BroadcastsPath, Helper.AnalyzedBroadcastsPath));
-                    }
+                    // * Chose alternative approach, code kept for future consideration. *
+                    //if (!IsFileLocked(new FileInfo(matchPath)))
+                    //{
+                    //    var csvPath = matchPath.Replace(".mp4", ".csv");
+                    //    //Directory.Move(matchPath, matchPath.Replace(Helper.BroadcastsPath, Helper.AnalyzedBroadcastsPath));
+                    //    //Directory.Move(csvPath, csvPath.Replace(Helper.BroadcastsPath, Helper.AnalyzedBroadcastsPath));
+                    //}
                 }
             }
 
@@ -170,7 +151,7 @@ namespace HighlightGenerator
                 {
                     while (!r.EndOfStream)
                     {
-                        kills.Add(double.Parse(r.ReadLine()));
+                        kills.Add(double.Parse(r.ReadLine() ?? throw new InvalidOperationException()));
                     }
                 }
 
@@ -178,7 +159,7 @@ namespace HighlightGenerator
                 {
                     while (!r.EndOfStream)
                     {
-                        ultimates.Add(double.Parse(r.ReadLine()));
+                        ultimates.Add(double.Parse(r.ReadLine() ?? throw new InvalidOperationException()));
                     }
                 }
 
@@ -186,7 +167,7 @@ namespace HighlightGenerator
                 {
                     while (!r.EndOfStream)
                     {
-                        turrets.Add(double.Parse(r.ReadLine()));
+                        turrets.Add(double.Parse(r.ReadLine() ?? throw new InvalidOperationException()));
                     }
                 }
 
@@ -194,7 +175,7 @@ namespace HighlightGenerator
                 {
                     while (!r.EndOfStream)
                     {
-                        barons.Add(double.Parse(r.ReadLine()));
+                        barons.Add(double.Parse(r.ReadLine() ?? throw new InvalidOperationException()));
                     }
                 }
 
@@ -202,7 +183,7 @@ namespace HighlightGenerator
                 {
                     while (!r.EndOfStream)
                     {
-                        dragons.Add(double.Parse(r.ReadLine()));
+                        dragons.Add(double.Parse(r.ReadLine() ?? throw new InvalidOperationException()));
                     }
                 }
 
@@ -210,7 +191,7 @@ namespace HighlightGenerator
                 {
                     while (!r.EndOfStream)
                     {
-                        inhibitors.Add(double.Parse(r.ReadLine()));
+                        inhibitors.Add(double.Parse(r.ReadLine() ?? throw new InvalidOperationException()));
                     }
                 }
             }
@@ -238,34 +219,34 @@ namespace HighlightGenerator
 
             foreach (var ultimate in ultimates)
             {
+                // Ultimates have a score of 1.0
                 ultimateUsage.Add(new MatchMetric(ultimate, 1.0));
             }
 
             foreach (var turret in turrets)
             {
-                // Kills have a score of 1.0
+                // Turrets have a score of 1.0
                 turretKills.Add(new MatchMetric(turret, 1.0));
             }
 
             foreach (var baron in barons)
             {
-                // Kills have a score of 1.0
+                // Barons have a score of 1.0
                 baronKills.Add(new MatchMetric(baron, 1.0));
             }
 
             foreach (var dragon in dragons)
             {
-                // Kills have a score of 1.0
+                // Dragons have a score of 1.0
                 dragonKills.Add(new MatchMetric(dragon, 1.0));
             }
 
             foreach (var inhibitor in inhibitors)
             {
-                // Kills have a score of 1.0
+                // Inhibitors have a score of 1.0
                 inhibitorKills.Add(new MatchMetric(inhibitor, 1.0));
             }
 
-            var totalMessages = filteredMatch.Segments.Sum(segment => segment.ChatLog.Messages.Count);
             var startTime = filteredMatch.StartTime;
             foreach (var segment in filteredMatch.Segments)
             {
@@ -274,8 +255,6 @@ namespace HighlightGenerator
                     var timeStamp = (message.Timestamp - startTime).TotalSeconds;
                     chatRate.Add(new MatchMetric(timeStamp, 1.0));
                 }
-                //chatRate.Add(new MatchMetric((segment.StartTime + ((segment.EndTime - segment.StartTime) / 2)),
-                //    (double)((double)segment.ChatLog.Messages.Count / (double)totalMessages)));
             }
 
             return new MatchMetrics(killDifferences, ultimateUsage, turretKills, baronKills, dragonKills, inhibitorKills, chatRate, filteredMatch);
@@ -286,13 +265,11 @@ namespace HighlightGenerator
             return path.Replace(@"\", @"\\");
         }
 
-        public double convertVideoTimeToMatchOffset(double videoTime, Match match)
+        public double ConvertVideoTimeToMatchOffset(double videoTime, Match match)
         {
-            double convertedTime;
             var videoStart = match.Segments[0].StartTime;
-            convertedTime = videoStart;
+            double convertedTime = videoStart;
 
-            List<double> segmentlengths = new List<double>();
             foreach (var segment in match.Segments)
             {
                 var segmentLength = segment.EndTime - segment.StartTime;
@@ -304,7 +281,7 @@ namespace HighlightGenerator
 
                 if (videoTime - segmentLength < 0)
                 {
-                    return convertedTime += videoTime;
+                    return convertedTime + videoTime;
                 }
             }
 

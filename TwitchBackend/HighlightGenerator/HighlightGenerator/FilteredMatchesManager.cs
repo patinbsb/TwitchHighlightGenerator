@@ -2,30 +2,23 @@
 using System.Collections.Generic;
 using System.Configuration;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Newtonsoft.Json;
 
 namespace HighlightGenerator
 {
     public static class FilteredMatchesManager
     {
-        private static string BroadcastPath = ConfigurationManager.AppSettings["BroadcastsPath"];
-        private static string FilteredMatchesJson = "FilteredMatches.json";
+        private static readonly string BroadcastPath = ConfigurationManager.AppSettings["BroadcastsPath"];
+        private static readonly string FilteredMatchesJson = "FilteredMatches.json";
         public static List<FilteredMatches> FilteredMatches { get; set; } = new List<FilteredMatches>();
 
         // Loads in the filteredMatch list file
-        public static void loadFromJson()
+        public static void LoadFromJson()
         {
             if (File.Exists(BroadcastPath + FilteredMatchesJson))
             {
                 var filteredMatchJson = File.ReadAllText(BroadcastPath + FilteredMatchesJson);
-                FilteredMatches = JsonConvert.DeserializeObject<List<FilteredMatches>>(filteredMatchJson);
-                if (FilteredMatches == null)
-                {
-                    FilteredMatches = new List<FilteredMatches>();
-                }
+                FilteredMatches = JsonConvert.DeserializeObject<List<FilteredMatches>>(filteredMatchJson) ?? new List<FilteredMatches>();
             }
             else
             {
@@ -33,7 +26,7 @@ namespace HighlightGenerator
             }
         }
 
-        public static void saveToJson()
+        public static void SaveToJson()
         {
             File.WriteAllText(BroadcastPath + FilteredMatchesJson, JsonConvert.SerializeObject(FilteredMatches));
         }

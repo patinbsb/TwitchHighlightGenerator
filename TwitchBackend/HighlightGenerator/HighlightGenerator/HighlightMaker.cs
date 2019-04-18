@@ -1,24 +1,16 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Configuration;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace HighlightGenerator
 {
     public class HighlightMaker
     {
-        private static string HighlightScriptPath = ConfigurationManager.AppSettings["ScriptsPath"] + "HighlightGenerator.py";
-        private static string HighlightVideosPath = ConfigurationManager.AppSettings["HighlightVideosPath"];
-        private static string ProcessedVodsPath = Helper.TwitchVodsPath + "processed\\";
-
-        public HighlightMaker()
-        {
-
-        }
+        private static readonly string HighlightScriptPath = ConfigurationManager.AppSettings["ScriptsPath"] + "HighlightGenerator.py";
+        private static readonly string HighlightVideosPath = ConfigurationManager.AppSettings["HighlightVideosPath"];
+        private static readonly string ProcessedVodsPath = Helper.TwitchVodsPath + "processed\\";
 
         public string CreateHighlight(HighlightInfo highlightInfo, Match match)
         {
@@ -34,7 +26,7 @@ namespace HighlightGenerator
             }
 
             string outputPath = HighlightVideosPath + highlightInfo.Score.ToString("F2") + "_"  + match.StartTime.AddSeconds(highlightInfo.StartOffset).ToString("yyyyMMddHHmmss") + 
-                                "_" + match.BroadcastId + "_" + match.GetFileName(true);
+                                "_" + match.BroadcastId + "_" + match.GetFileName();
 
             double startTime = highlightInfo.StartOffset;
 
@@ -50,15 +42,19 @@ namespace HighlightGenerator
             string videoToProcessParam = ConvertToPythonPath(videoToProcess);
             string outputPathParam = ConvertToPythonPath(outputPath);
 
-            ProcessStartInfo start = new ProcessStartInfo();
-            start.FileName = Helper.PythonInterpreterPath;
-            start.Arguments = $"\"{highlightScriptPathParam}\" \"{videoToProcessParam}\" \"{outputPathParam}\" \"{timeStart.ToString()}\" \"{timeEnd.ToString()}\"";
-            start.UseShellExecute = false;
-            start.RedirectStandardOutput = true;
-            start.RedirectStandardError = true;
+            ProcessStartInfo start = new ProcessStartInfo
+            {
+                FileName = Helper.PythonInterpreterPath,
+                Arguments =
+                    $"\"{highlightScriptPathParam}\" \"{videoToProcessParam}\" \"{outputPathParam}\" \"{timeStart.ToString(CultureInfo.InvariantCulture)}\" \"{timeEnd.ToString(CultureInfo.InvariantCulture)}\"",
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true
+            };
 
             using (Process process = Process.Start(start))
             {
+                Debug.Assert(process != null, nameof(process) + " != null");
                 using (StreamReader reader = process.StandardOutput)
                 {
                     while (!reader.EndOfStream)

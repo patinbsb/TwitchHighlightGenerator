@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace HighlightGenerator
 {
@@ -10,18 +6,18 @@ namespace HighlightGenerator
     {
         //TODO check LocalBroadcastManager for locally saved broadcast before committing to download.
 
-        private Broadcast Info;
-        private string Channel = "Riotgames";
+        private Broadcast _info;
+        private string _channel = "Riotgames";
 
         public BroadcastDownloader(string url)
         {
-            this.Info = GetBroadcastInfo(url);
+            _info = GetBroadcastInfo(url);
 
         }
 
         public BroadcastDownloader(DateTime date)
         {
-            this.Info = GetBroadcastInfo(date);
+            _info = GetBroadcastInfo(date);
         }
 
         public Broadcast GetBroadcastInfo(string url)

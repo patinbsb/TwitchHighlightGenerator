@@ -1,26 +1,23 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
 using System.Net;
 using System.Text;
-using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
 
 namespace HighlightGenerator
 {
     class TwitchMetadata
     {
-        private const string TWITCH_CLIENT_ID = "37v97169hnj8kaoq8fs3hzz8v6jezdj";
-        private const string TWITCH_CLIENT_ID_HEADER = "Client-ID";
-        private const string TWITCH_V5_ACCEPT = "application/vnd.twitchtv.v5+json";
-        private const string TWITCH_V5_ACCEPT_HEADER = "Accept";
-        private const string TWITCH_AUTHORIZATION_HEADER = "Authorization";
+        private const string TwitchClientId = "37v97169hnj8kaoq8fs3hzz8v6jezdj";
+        private const string TwitchClientIdHeader = "Client-ID";
+        private const string TwitchV5Accept = "application/vnd.twitchtv.v5+json";
+        private const string TwitchV5AcceptHeader = "Accept";
+        private const string TwitchAuthorizationHeader = "Authorization";
         WebClient CreateTwitchWebClient()
         {
             WebClient wc = new WebClient();
-            wc.Headers.Add(TWITCH_CLIENT_ID_HEADER, TWITCH_CLIENT_ID);
-            wc.Headers.Add(TWITCH_V5_ACCEPT_HEADER, TWITCH_V5_ACCEPT);
+            wc.Headers.Add(TwitchClientIdHeader, TwitchClientId);
+            wc.Headers.Add(TwitchV5AcceptHeader, TwitchV5Accept);
             wc.Encoding = Encoding.UTF8;
             return wc;
         }
@@ -32,7 +29,7 @@ namespace HighlightGenerator
             {
                 try
                 {
-                    string result = webClient.DownloadString(string.Format("https://api.twitch.tv/kraken/videos/{0}", id));
+                    string result = webClient.DownloadString($"https://api.twitch.tv/kraken/videos/{id}");
 
                     JObject videoJson = JObject.Parse(result);
 

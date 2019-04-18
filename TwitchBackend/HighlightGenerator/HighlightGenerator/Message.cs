@@ -1,9 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Newtonsoft.Json;
 
 namespace HighlightGenerator
 {
@@ -11,9 +6,9 @@ namespace HighlightGenerator
     {
         public Message(DateTime timeStamp, string username, string content)
         {
-            this.Timestamp = timeStamp;
-            this.Username = username;
-            this.Content = content;
+            Timestamp = timeStamp;
+            Username = username;
+            Content = content;
         }
 
         public DateTime Timestamp { get; set; }

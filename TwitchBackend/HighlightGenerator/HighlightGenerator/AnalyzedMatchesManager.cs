@@ -2,20 +2,17 @@
 using System.Collections.Generic;
 using System.Configuration;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Newtonsoft.Json;
 
 namespace HighlightGenerator
 {
     public static class AnalyzedMatchesManager
     {
-        private static string AnalyzedMatchesPath = ConfigurationManager.AppSettings["AnalyzedMatchesPath"];
-        private static string AnalyzedMatchesJson = "AnalyzedMatches.json";
+        private static readonly string AnalyzedMatchesPath = ConfigurationManager.AppSettings["AnalyzedMatchesPath"];
+        private static readonly string AnalyzedMatchesJson = "AnalyzedMatches.json";
         public static List<MatchMetrics> AnalyzedMatches { get; private set; } = new List<MatchMetrics>();
 
-        // Loads in the filteredMatch list file. If a text version exists it will use this first to avoid unnessecasry processing.
+        // Loads in the filteredMatch list file. If a text version exists it will use this first to avoid unnecessary processing.
         public static void LoadFromFiles()
         {
             var filteredMatches = FilteredMatchesManager.FilteredMatches;
@@ -102,9 +99,9 @@ namespace HighlightGenerator
         }
 
         /// <summary>
-        /// Adds analyzedmatch and creates a JSON copy for offline use.
+        /// Adds analyzed match and saves a Json file locally.
         /// </summary>
-        /// <param name="filteredMatch"></param>
+        /// <param name="analyzedMatch"></param>
         public static void AddAnalyzedMatch(MatchMetrics analyzedMatch)
         {
             if (!AnalyzedMatches.Contains(analyzedMatch))
@@ -114,14 +111,14 @@ namespace HighlightGenerator
             }
             else
             {
-                throw new Exception($"analyzedMatch was added where a duplicate already exists.");
+                throw new Exception("analyzedMatch was added where a duplicate already exists.");
             }
         }
 
         /// <summary>
-        /// Adds analyzedmatches and creates a JSON copy for offline use.
+        /// Adds analyzed matches and saves a Json file locally.
         /// </summary>
-        /// <param name="filteredMatches"></param>
+        /// <param name="matches"></param>
         public static void AddAnalyzedMatches(List<MatchMetrics> matches)
         {
             foreach (var match in matches)
@@ -138,13 +135,11 @@ namespace HighlightGenerator
             File.WriteAllText(AnalyzedMatchesPath + AnalyzedMatchesJson, JsonConvert.SerializeObject(AnalyzedMatches));
         }
 
-        private static double convertVideoTimeToMatchOffset(double videoTime, Match match)
+        private static double ConvertVideoTimeToMatchOffset(double videoTime, Match match)
         {
-            double convertedTime;
             var videoStart = match.Segments[0].StartTime;
-            convertedTime = videoStart;
+            double convertedTime = videoStart;
 
-            List<double> segmentlengths = new List<double>();
             foreach (var segment in match.Segments)
             {
                 var segmentLength = segment.EndTime - segment.StartTime;
@@ -156,7 +151,7 @@ namespace HighlightGenerator
 
                 if (videoTime - segmentLength < 0)
                 {
-                    return convertedTime += videoTime;
+                    return convertedTime + videoTime;
                 }
             }
 

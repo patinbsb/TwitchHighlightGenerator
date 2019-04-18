@@ -1,21 +1,11 @@
 ﻿using System;
-using System.CodeDom;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Data;
-using System.Globalization;
-using System.Linq;
 using System.Net;
-using System.Security.Policy;
 using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading;
-using System.Threading.Tasks;
 using MySql.Data.MySqlClient;
-using OpenQA.Selenium;
-using OpenQA.Selenium.Chrome;
-using OpenQA.Selenium.Remote;
-using OpenQA.Selenium.Support.UI;
 
 namespace HighlightGenerator
 {
@@ -37,21 +27,17 @@ namespace HighlightGenerator
             }
 
             // We parse the chat log into messages.
-            var chatLogRawLines = chatLogRaw.Split('[');
-
             var pattern = "\\[\\d\\d\\d\\d-\\d\\d-\\d\\d \\d\\d:\\d\\d:\\d\\d UTC\\] .*: .*";
 
             Regex regex = new Regex(pattern);
             var matches = regex.Matches(chatLogRaw);
 
-            List<Message> messages = new List<Message>();
-
             Regex timeStampRegex = new Regex("\\d\\d\\d\\d-\\d\\d-\\d\\d \\d\\d:\\d\\d:\\d\\d");
             Regex userNameRegex = new Regex("\\d\\d UTC\\] .*:");
             Regex messageContentRegex = new Regex("\\d\\d UTC\\] .*: .*");
 
-            StringBuilder sCommand = new StringBuilder($"INSERT INTO `dsp`.`chatlog`\n(`broadcastid`,\n`message`,\n`date`,\n`username`)\n" +
-                                                       $"VALUES ");
+            StringBuilder sCommand = new StringBuilder("INSERT INTO `dsp`.`chatlog`\n(`broadcastid`,\n`message`,\n`date`,\n`username`)\n" +
+                                                       "VALUES ");
 
             List<string> rows = new List<string>();
 
@@ -92,8 +78,10 @@ namespace HighlightGenerator
             sCommand.Append(string.Join(",", rows));
             sCommand.Append(";");
 
-            MySqlCommand command = new MySqlCommand(sCommand.ToString(), mySqlConnection);
-            command.CommandType = CommandType.Text;
+            MySqlCommand command = new MySqlCommand(sCommand.ToString(), mySqlConnection)
+            {
+                CommandType = CommandType.Text
+            };
             command.ExecuteNonQuery();
 
             mySqlConnection.Close();
@@ -107,12 +95,11 @@ namespace HighlightGenerator
 
             MySqlConnection mySqlConnection = new MySqlConnection(Helper.MySqlConnection);
             mySqlConnection.Open();
-            MySqlCommand command = new MySqlCommand($"SELECT message, date, username from chatlog where " +
-                                                    $"date between '{startTime.ToUniversalTime().ToString("yyyy-MM-dd HH:mm:ss")}'" +
-                                                    $" and '{endTime.ToUniversalTime().ToString("yyyy-MM-dd HH:mm:ss")}'", mySqlConnection);
+            MySqlCommand command = new MySqlCommand("SELECT message, date, username from chatlog where " +
+                                                    $"date between '{startTime.ToUniversalTime():yyyy-MM-dd HH:mm:ss}'" +
+                                                    $" and '{endTime.ToUniversalTime():yyyy-MM-dd HH:mm:ss}'", mySqlConnection);
 
-            MySqlDataAdapter dataAdapter = new MySqlDataAdapter();
-            dataAdapter.SelectCommand = command;
+            MySqlDataAdapter dataAdapter = new MySqlDataAdapter {SelectCommand = command};
             DataSet messageDataSet = new DataSet();
             dataAdapter.Fill(messageDataSet, "chatlog");
             mySqlConnection.Close();

@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace HighlightGenerator
 {
@@ -10,8 +6,8 @@ namespace HighlightGenerator
     {
         #region Constatnts
 
-        private const string UNTITLED_BROADCAST = "Untitled Broadcast";
-        private const string UNKNOWN_GAME = "Unknown";
+        private const string UntitledBroadcast = "Untitled Broadcast";
+        private const string UnknownGame = "Unknown";
 
         #endregion Constatnts
 
@@ -32,21 +28,14 @@ namespace HighlightGenerator
 
             if (string.IsNullOrWhiteSpace(title))
             {
-                title = UNTITLED_BROADCAST;
+                title = UntitledBroadcast;
             }
 
             Channel = channel;
             Title = title;
             Id = id;
 
-            if (string.IsNullOrWhiteSpace(game))
-            {
-                Game = UNKNOWN_GAME;
-            }
-            else
-            {
-                Game = game;
-            }
+            Game = string.IsNullOrWhiteSpace(game) ? UnknownGame : game;
 
             Views = views;
             Length = length;

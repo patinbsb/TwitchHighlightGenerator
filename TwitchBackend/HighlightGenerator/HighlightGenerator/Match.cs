@@ -1,8 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace HighlightGenerator
 {
@@ -10,11 +7,11 @@ namespace HighlightGenerator
     {
         public Match(DateTime startTime, int id, int broadcastId, bool isInstantReplay, List<MatchSegment> segments)
         {
-            this.StartTime = startTime;
-            this.Id = id;
-            this.BroadcastId = broadcastId;
-            this.IsInstantReplay = isInstantReplay;
-            this.Segments = segments;
+            StartTime = startTime;
+            Id = id;
+            BroadcastId = broadcastId;
+            IsInstantReplay = isInstantReplay;
+            Segments = segments;
         }
         public bool IsInstantReplay { get; set; }
         public int Id { get; set; }

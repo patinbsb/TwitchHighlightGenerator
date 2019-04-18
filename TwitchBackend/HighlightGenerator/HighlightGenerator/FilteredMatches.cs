@@ -1,8 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace HighlightGenerator
 {
@@ -10,13 +7,13 @@ namespace HighlightGenerator
     {
         public FilteredMatches(List<Match> matches, Broadcast broadcast)
         {
-            this.Matches = matches;
-            this.Broadcast = broadcast;
+            Matches = matches;
+            Broadcast = broadcast;
         }
 
         public List<Match> Matches { get; set; }
         public Broadcast Broadcast { get; set; }
-        public bool isPopulated = false;
+        public bool IsPopulated = false;
 
         public void PopulateMatchChatLogs()
         {
@@ -28,7 +25,7 @@ namespace HighlightGenerator
                     match.PopulateSegmentChatLogs();
                 }
             }
-            isPopulated = true;
+            IsPopulated = true;
         }
 
         public string GetDirectoryPath()

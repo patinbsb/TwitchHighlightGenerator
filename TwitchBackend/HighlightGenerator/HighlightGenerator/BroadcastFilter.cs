@@ -4,7 +4,6 @@ using System.Configuration;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
@@ -18,25 +17,25 @@ namespace HighlightGenerator
         public BroadcastFilter(string filterTemplatePath, string filterThreshold, string startingFrame, string framesToSkip,
             string convertToGreyscale, string secondsUntilTimeout, string secondsMinimumMatchLength)
         {
-            this.FilterTemplatePath = filterTemplatePath;
-            this.FilterThreshold = filterThreshold;
-            this.StartingFrame = startingFrame;
-            this.FramesToSkip = framesToSkip;
-            this.ConvertToGreyscale = convertToGreyscale;
-            this.SecondsUntilTimeout = secondsUntilTimeout;
-            this.SecondsMinimumMatchLength = secondsMinimumMatchLength;
+            FilterTemplatePath = filterTemplatePath;
+            FilterThreshold = filterThreshold;
+            StartingFrame = startingFrame;
+            FramesToSkip = framesToSkip;
+            ConvertToGreyscale = convertToGreyscale;
+            SecondsUntilTimeout = secondsUntilTimeout;
+            SecondsMinimumMatchLength = secondsMinimumMatchLength;
         }
 
         // LoadFromFiles from default configuration values.
         public BroadcastFilter()
         {
-            this.FilterTemplatePath = ConfigurationManager.AppSettings["FilterTemplatePath"];
-            this.FilterThreshold = ConfigurationManager.AppSettings["FilterThreshold"];
-            this.StartingFrame = ConfigurationManager.AppSettings["StartingFrame"];
-            this.FramesToSkip = ConfigurationManager.AppSettings["FramesToSkip"];
-            this.ConvertToGreyscale = ConfigurationManager.AppSettings["ConvertToGreyscale"];
-            this.SecondsUntilTimeout = ConfigurationManager.AppSettings["SecondsUntilTimeout"];
-            this.SecondsMinimumMatchLength = ConfigurationManager.AppSettings["SecondsMinimumMatchLength"];
+            FilterTemplatePath = ConfigurationManager.AppSettings["FilterTemplatePath"];
+            FilterThreshold = ConfigurationManager.AppSettings["FilterThreshold"];
+            StartingFrame = ConfigurationManager.AppSettings["StartingFrame"];
+            FramesToSkip = ConfigurationManager.AppSettings["FramesToSkip"];
+            ConvertToGreyscale = ConfigurationManager.AppSettings["ConvertToGreyscale"];
+            SecondsUntilTimeout = ConfigurationManager.AppSettings["SecondsUntilTimeout"];
+            SecondsMinimumMatchLength = ConfigurationManager.AppSettings["SecondsMinimumMatchLength"];
         }
 
         public string FilterTemplatePath { get; set; }
@@ -48,9 +47,9 @@ namespace HighlightGenerator
         public string FilterThreshold { get; set; }
         public string VideoFilterScriptPath = Helper.ScriptsPath + "Video_Filter.py";
 
-        private object _lockProgress = new object();
+        private readonly object _lockProgress = new object();
         private object _lockBroadcast = new object();
-        private List<Tuple<string, string>> _taskProgress = new List<Tuple<string, string>>();
+        private readonly List<Tuple<string, string>> _taskProgress = new List<Tuple<string, string>>();
 
         /// <summary>
         /// Processes raw VOD files. Saves their broadcast information to the LocalBroadcastManager and returns the resulting filtered matches.
@@ -60,16 +59,16 @@ namespace HighlightGenerator
         public List<FilteredMatches> FilterBroadcasts(List<string> videosToProcess)
         {
 
-            // We iterate over each VOD file, filter out gameplay, get their associated chatlog and create a metadata store in the form of a Broadcast list.
+            // We iterate over each VOD file, filter out gameplay, get their associated chat-log and create a metadata store in the form of a Broadcast list.
             List<Task> videoFilterTasks = new List<Task>();
-            List<Task> chatLogTasks = new List<Task>();
             List<Broadcast> broadcasts = new List<Broadcast>();
+            bool skip = false;
             foreach (var video in videosToProcess)
             {
                 Console.WriteLine($"Found unprocessed video: {video}");
 
                 // Extracting metadata from video filename
-                var videoInfo = video.Substring(video.LastIndexOf("\\")).Split('_');
+                var videoInfo = video.Substring(video.LastIndexOf("\\", StringComparison.Ordinal)).Split('_');
 
                 var recordedDate = videoInfo[0];
 
@@ -88,9 +87,11 @@ namespace HighlightGenerator
                     if (filteredMatch.Broadcast.Id == videoId)
                     {
                         Console.WriteLine(video + " has already been processed before, skipping.");
-                        continue;
+                        skip = true;
+                        break;
                     }
                 }
+                if (skip) { continue; }
 
                 videoFilterTasks.Add(new Task(() => FilterVideo(video, outputPath, FilterTemplatePath, FilterThreshold, StartingFrame,
                     FramesToSkip, ConvertToGreyscale, SecondsUntilTimeout, SecondsMinimumMatchLength)));
@@ -118,7 +119,7 @@ namespace HighlightGenerator
             }
 
             // Progress tracking
-            Regex pecentageRegex = new Regex("\\d+%");
+            Regex percentageRegex = new Regex("\\d+%");
             double highestPercentage = 0.00;
             double prevReportedPercentage = 0.00;
             List<int> taskProgressTracker = new List<int>();
@@ -141,7 +142,7 @@ namespace HighlightGenerator
                 {
                     if (progress.Item2.Contains("%"))
                     {
-                        var match = pecentageRegex.Match(progress.Item2);
+                        var match = percentageRegex.Match(progress.Item2);
                         var percentage = int.Parse(match.Value.Trim('%'));
                         taskProgressTracker.Add(percentage);
                         if (taskProgressTracker.Count > 5)
@@ -178,11 +179,15 @@ namespace HighlightGenerator
         /// Thread safe method for filtering an input video to an output location using the video_filter.py script
         /// And the locally installed python interpreter.
         /// </summary>
-        /// <param name="videoFilterScriptPath"></param>
-        /// <param name="videoParam"></param>
-        /// <param name="outputParam"></param>
-        /// <param name="pythonPath"></param>
-        /// <returns></returns>
+        /// <param name="videoToProcess"></param>
+        /// <param name="outputPath"></param>
+        /// <param name="filterTemplatePath"></param>
+        /// <param name="filterThreshold"></param>
+        /// <param name="startingFrame"></param>
+        /// <param name="framesToSkip"></param>
+        /// <param name="convertToGreyscale"></param>
+        /// <param name="secondsUntilTimeout"></param>
+        /// <param name="secondsMinimumMatchLength"></param>
         public void FilterVideo(string videoToProcess, string outputPath, string filterTemplatePath, string filterThreshold, string startingFrame, string framesToSkip,
             string convertToGreyscale, string secondsUntilTimeout, string secondsMinimumMatchLength)
         {
@@ -191,16 +196,20 @@ namespace HighlightGenerator
             string outputPathParam = ConvertToPythonPath(outputPath);
             string filterTemplatePathParam = ConvertToPythonPath(filterTemplatePath);
 
-            ProcessStartInfo start = new ProcessStartInfo();
-            start.FileName = Helper.PythonInterpreterPath;
-            start.Arguments = $"\"{videoFilterScriptPathParam}\" \"{videoToProcessParam}\" \"{outputPathParam}\" \"{filterTemplatePathParam}\" \"{filterThreshold}\" \"{startingFrame}\" " +
-                              $"\"{framesToSkip}\" \"{convertToGreyscale}\" \"{secondsUntilTimeout}\" \"{secondsMinimumMatchLength}\"";
-            start.UseShellExecute = false;
-            start.RedirectStandardOutput = true;
-            start.RedirectStandardError = true;
+            ProcessStartInfo start = new ProcessStartInfo
+            {
+                FileName = Helper.PythonInterpreterPath,
+                Arguments =
+                    $"\"{videoFilterScriptPathParam}\" \"{videoToProcessParam}\" \"{outputPathParam}\" \"{filterTemplatePathParam}\" \"{filterThreshold}\" \"{startingFrame}\" " +
+                    $"\"{framesToSkip}\" \"{convertToGreyscale}\" \"{secondsUntilTimeout}\" \"{secondsMinimumMatchLength}\"",
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true
+            };
 
             using (Process process = Process.Start(start))
             {
+                Debug.Assert(process != null, nameof(process) + " != null");
                 using (StreamReader reader = process.StandardOutput)
                 {
                     while (!reader.EndOfStream)
@@ -232,8 +241,7 @@ namespace HighlightGenerator
                         }
                         finally
                         {
-                            if (stream != null)
-                                stream.Close();
+                            stream?.Close();
                         }
 
                         //file is not locked
@@ -253,10 +261,12 @@ namespace HighlightGenerator
             List<FilteredMatches> filteredMatches = new List<FilteredMatches>();
             var broadcastDirectories = Directory.EnumerateDirectories(Helper.BroadcastsPath);
             // We create a list of filtered matches.
+            var directories = broadcastDirectories.ToList();
+
             foreach (var broadcast in broadcasts)
             {
                 List<Match> matches = new List<Match>();
-                foreach (var directory in broadcastDirectories)
+                foreach (var directory in directories)
                 {
                     if (directory.Contains(broadcast.Id.ToString()))
                     {
@@ -286,7 +296,7 @@ namespace HighlightGenerator
                                                 var lines = reader.ReadLine().Split(',');
                                                 double segmentStart = double.Parse(lines[0]);
                                                 double segmentEnd = double.Parse(lines[1]);
-                                                // Get the chatlog for each segment.
+                                                // Get the chat-log for each segment.
                                                 var chatLog = new ChatLog(new List<Message>());
                                                 startEndTimes.Add(new MatchSegment(segmentStart, segmentEnd, chatLog));
                                             }

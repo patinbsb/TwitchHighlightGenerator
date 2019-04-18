@@ -1,34 +1,20 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Configuration;
-using System.Diagnostics;
-using System.Drawing;
-using System.Drawing.Printing;
 using System.IO;
-using System.Linq;
-using System.Net;
 using System.Reflection;
-using System.Text;
-using System.Text.RegularExpressions;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace HighlightGenerator
 {
     class Program
     {
-        private static object lockProgress = new object();
-        private static object lockBroadcast = new object();
-        private static List<Tuple<string, string>> taskProgress = new List<Tuple<string, string>>();
-        private static List<Broadcast> broadcasts = new List<Broadcast>();
-
         static void Main(string[] args)
         {
             // Here we setup the environment.
             // We step back from the project location until we reach the project's base folder and establish folder locations from there.
 
             // Getting the root path of the project.
-            string rootPath = System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
+            string rootPath = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
             while (rootPath.Contains("TwitchBackend"))
             {
                 rootPath = Directory.GetParent(rootPath).FullName;
@@ -37,14 +23,15 @@ namespace HighlightGenerator
             rootPath += "\\";
             ConfigurationManager.AppSettings["RootPath"] = rootPath;
 
-            // Configuring Script, Broadcast.
+            // Configuring Path locations.
             string scriptsPath = rootPath + "Scripts\\";
-            ConfigurationManager.AppSettings["ScriptsPath"] = scriptsPath;
             string broadcastsPath = rootPath + "Broadcasts\\";
             string analyzedMatchesPath = rootPath + "AnalyzedBroadcasts\\";
             string tensorflowDataPath = rootPath + "TensorflowData\\";
             string highlightVideosPath = rootPath + "HighlightVideos\\";
             string twitchVodsPath = rootPath + "TwitchVods\\";
+
+            ConfigurationManager.AppSettings["ScriptsPath"] = scriptsPath;
             ConfigurationManager.AppSettings["BroadcastsPath"] = broadcastsPath;
             ConfigurationManager.AppSettings["TwitchVodsPath"] = twitchVodsPath;
             ConfigurationManager.AppSettings["AnalyzedMatchesPath"] = analyzedMatchesPath;
@@ -53,7 +40,7 @@ namespace HighlightGenerator
             ConfigurationManager.AppSettings["FilterTemplatePath"] = scriptsPath + "broadcastFilterTemplate.png";
 
             // Initialise existing broadcast data from previous sessions.
-            FilteredMatchesManager.loadFromJson();
+            FilteredMatchesManager.LoadFromJson();
 
             // Check for new videos to process.
             var files = Directory.GetFiles(twitchVodsPath);
@@ -68,20 +55,23 @@ namespace HighlightGenerator
                 }
             }
 
+            // Process videos, stripping out non-gameplay elements.
             var filteredMatches = new BroadcastFilter().FilterBroadcasts(videosToProcess);
 
             Console.WriteLine("");
-            Console.WriteLine("Populating chatlogs for filtered matches");
+            Console.WriteLine("Populating chat-logs for filtered matches");
             Console.WriteLine("");
 
+            // Load in filtered chat-log info into each filtered match.
             foreach (var filteredMatch in filteredMatches)
             {
-                if (!filteredMatch.isPopulated)
+                if (!filteredMatch.IsPopulated)
                 {
                     filteredMatch.PopulateMatchChatLogs();
                 }
             }
 
+            // Save the newly discovered filtered match info to our manager.
             FilteredMatchesManager.AddFilteredMatches(filteredMatches);
 
             var matchAnalyzer = new MatchAnalyzer();
@@ -91,11 +81,13 @@ namespace HighlightGenerator
             Console.WriteLine("Analyzing matches.");
             Console.WriteLine("");
 
+            // Go through each filtered match and analyze it for selected gameplay metrics (kills, ultimate usage, ect.).
             foreach (var filteredMatch in FilteredMatchesManager.FilteredMatches)
             {
                 matchCollection.Add(matchAnalyzer.AnalyzeMatches(filteredMatch));
             }
 
+            // Save the newly discovered analysis to our manager.
             foreach (var collection in matchCollection)
             {
                 AnalyzedMatchesManager.AddAnalyzedMatches(collection);
@@ -105,6 +97,7 @@ namespace HighlightGenerator
             Console.WriteLine("Match analysis complete.");
             Console.WriteLine("");
 
+            // Ensuring a Json file is generated and in sync with the local files generated via analysis.
             AnalyzedMatchesManager.LoadFromFiles();
             AnalyzedMatchesManager.SaveToJson();
 
@@ -112,9 +105,11 @@ namespace HighlightGenerator
             Console.WriteLine("Loading analyzed match info into Deep Learning Predictor.");
             Console.WriteLine("");
 
+
             var deepLearner = new DeepLearner();
             var highlightGenerator = new HighlightMaker();
 
+            // Finally we generate a highlight for each discovered match we find.
             foreach (var match in AnalyzedMatchesManager.AnalyzedMatches)
             {
                 if (!match.Match.IsInstantReplay)

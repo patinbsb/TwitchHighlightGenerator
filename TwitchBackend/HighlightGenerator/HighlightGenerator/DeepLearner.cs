@@ -1,32 +1,22 @@
 ﻿using System;
-using System.CodeDom;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading;
-using System.Threading.Tasks;
-using System.Xml;
 
 namespace HighlightGenerator
 {
     class DeepLearner
     {
-        private string tensorflowPath = ConfigurationManager.AppSettings["TensorflowDataPath"];
+        private readonly string _tensorflowPath = ConfigurationManager.AppSettings["TensorflowDataPath"];
 
-        private string tensorflowPythonInterpreterPath =
+        private readonly string _tensorflowPythonInterpreterPath =
             ConfigurationManager.AppSettings["TensorflowPythonInterpreterPath"];
-        private string deepLearnerScriptPath = ConfigurationManager.AppSettings["ScriptsPath"] + "DeepLearningModel.py";
-        private int secondsChunkSize = 1;
-
-        public DeepLearner()
-        {
-
-        }
+        private readonly string _deepLearnerScriptPath = ConfigurationManager.AppSettings["ScriptsPath"] + "DeepLearningModel.py";
+        private readonly int _secondsChunkSize = 1;
 
         public HighlightInfo GetHighlightPeriod(MatchMetrics match)
         {
@@ -41,12 +31,12 @@ namespace HighlightGenerator
 
             try
             {
-                predictedDataRaw = File.ReadAllLines(tensorflowPath + "Predictions\\" + predictedDataPath).ToList();
+                predictedDataRaw = File.ReadAllLines(_tensorflowPath + "Predictions\\" + predictedDataPath).ToList();
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 GetHighlightInfo(matchPath, predictedDataPath);
-                predictedDataRaw = File.ReadAllLines(tensorflowPath + "Predictions\\" + predictedDataPath).ToList();
+                predictedDataRaw = File.ReadAllLines(_tensorflowPath + "Predictions\\" + predictedDataPath).ToList();
             }
 
              
@@ -62,7 +52,7 @@ namespace HighlightGenerator
             foreach (var line in predictedDataRaw)
             {
                 predictedData.Add(double.Parse(line));
-                matchOffset.Add(matchAnalyzer.convertVideoTimeToMatchOffset(counter * 15, match.Match));
+                matchOffset.Add(matchAnalyzer.ConvertVideoTimeToMatchOffset(counter * 15, match.Match));
                 counter += 1;
             }
 
@@ -86,15 +76,19 @@ namespace HighlightGenerator
 
         private void GetHighlightInfo(string matchPath, string predictedDataPath)
         {
-            ProcessStartInfo start = new ProcessStartInfo();
-            start.FileName = tensorflowPythonInterpreterPath;
-            start.Arguments = $"\"{ConvertToPythonPath(deepLearnerScriptPath)}\" \"{ConvertToPythonPath(matchPath)}\" \"{predictedDataPath}\"";
-            start.UseShellExecute = false;
-            start.RedirectStandardOutput = true;
-            start.RedirectStandardError = true;
+            ProcessStartInfo start = new ProcessStartInfo
+            {
+                FileName = _tensorflowPythonInterpreterPath,
+                Arguments =
+                    $"\"{ConvertToPythonPath(_deepLearnerScriptPath)}\" \"{ConvertToPythonPath(matchPath)}\" \"{predictedDataPath}\"",
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true
+            };
 
             using (Process process = Process.Start(start))
             {
+                Debug.Assert(process != null, nameof(process) + " != null");
                 using (StreamReader reader = process.StandardOutput)
                 {
                     while (!reader.EndOfStream)
@@ -129,17 +123,17 @@ namespace HighlightGenerator
                 outputCsv.AppendLine(string.Join(",", line));
             }
 
-            File.WriteAllText(tensorflowPath + "highlights.csv", outputCsv.ToString());
+            File.WriteAllText(_tensorflowPath + "highlights.csv", outputCsv.ToString());
         }
 
         public void PrepareMatchForTensorFlow(MatchMetrics match, bool training)
         {
-            var chunkedKillDifferences = divideIntoTimeChunks(match.KillDifferences, match.Match, secondsChunkSize);
-            var chunkedUltimateUsage = divideIntoTimeChunks(match.UltimateUsage, match.Match, secondsChunkSize);
-            var chunkedTurretKills = divideIntoTimeChunks(match.TurretKills, match.Match, secondsChunkSize);
-            var chunkedBaronKills = divideIntoTimeChunks(match.BaronKills, match.Match, secondsChunkSize);
-            var chunkedDragonKills = divideIntoTimeChunks(match.DragonKills, match.Match, secondsChunkSize);
-            var chunkedInhibitorKills = divideIntoTimeChunks(match.InhibitorKills, match.Match, secondsChunkSize);
+            var chunkedKillDifferences = DivideIntoTimeChunks(match.KillDifferences, _secondsChunkSize);
+            var chunkedUltimateUsage = DivideIntoTimeChunks(match.UltimateUsage, _secondsChunkSize);
+            var chunkedTurretKills = DivideIntoTimeChunks(match.TurretKills, _secondsChunkSize);
+            var chunkedBaronKills = DivideIntoTimeChunks(match.BaronKills, _secondsChunkSize);
+            var chunkedDragonKills = DivideIntoTimeChunks(match.DragonKills, _secondsChunkSize);
+            var chunkedInhibitorKills = DivideIntoTimeChunks(match.InhibitorKills, _secondsChunkSize);
 
             int highestListCount = 0;
 
@@ -150,7 +144,7 @@ namespace HighlightGenerator
             highestListCount = (chunkedDragonKills.Count > highestListCount) ? chunkedDragonKills.Count : highestListCount;
             highestListCount = (chunkedInhibitorKills.Count > highestListCount) ? chunkedInhibitorKills.Count : highestListCount;
 
-            var chunkedChatRate = divideChatIntoTimeChunks(match.ChatRate, match.Match, highestListCount);
+            var chunkedChatRate = DivideChatIntoTimeChunks(match.ChatRate, highestListCount);
 
 
             var matchCompiled = new List<double>();
@@ -158,40 +152,13 @@ namespace HighlightGenerator
 
             for (int i = 0; i < highestListCount; i++)
             {
-                if (i < chunkedKillDifferences.Count)
-                { matchCompiled.Add(chunkedKillDifferences[i]); }
-                else
-                { matchCompiled.Add(0.0); }
-
-                if (i < chunkedUltimateUsage.Count)
-                { matchCompiled.Add(chunkedUltimateUsage[i]); }
-                else
-                { matchCompiled.Add(0.0); }
-
-                if (i < chunkedTurretKills.Count)
-                { matchCompiled.Add(chunkedTurretKills[i]); }
-                else
-                { matchCompiled.Add(0.0); }
-
-                if (i < chunkedBaronKills.Count)
-                { matchCompiled.Add(chunkedBaronKills[i]); }
-                else
-                { matchCompiled.Add(0.0); }
-
-                if (i < chunkedDragonKills.Count)
-                { matchCompiled.Add(chunkedDragonKills[i]); }
-                else
-                { matchCompiled.Add(0.0); }
-
-                if (i < chunkedInhibitorKills.Count)
-                { matchCompiled.Add(chunkedInhibitorKills[i]); }
-                else
-                { matchCompiled.Add(0.0); }
-
-                if (i < chunkedChatRate.Count)
-                { matchCompiled.Add(chunkedChatRate[i]); }
-                else
-                { matchCompiled.Add(0.0); }
+                matchCompiled.Add(i < chunkedKillDifferences.Count ? chunkedKillDifferences[i] : 0.0);
+                matchCompiled.Add(i < chunkedUltimateUsage.Count ? chunkedUltimateUsage[i] : 0.0);
+                matchCompiled.Add(i < chunkedTurretKills.Count ? chunkedTurretKills[i] : 0.0);
+                matchCompiled.Add(i < chunkedBaronKills.Count ? chunkedBaronKills[i] : 0.0);
+                matchCompiled.Add(i < chunkedDragonKills.Count ? chunkedDragonKills[i] : 0.0);
+                matchCompiled.Add(i < chunkedInhibitorKills.Count ? chunkedInhibitorKills[i] : 0.0);
+                matchCompiled.Add(i < chunkedChatRate.Count ? chunkedChatRate[i] : 0.0);
 
                 output.Add(matchCompiled);
                 matchCompiled = new List<double>();
@@ -208,20 +175,18 @@ namespace HighlightGenerator
 
             if (training)
             {
-                File.WriteAllText(tensorflowPath + "TrainingData\\" + match.Match.BroadcastId + match.Match.GetFileName(false) + ".csv", outputCsv.ToString());
+                File.WriteAllText(_tensorflowPath + "TrainingData\\" + match.Match.BroadcastId + match.Match.GetFileName(false) + ".csv", outputCsv.ToString());
             }
             else
             {
-                File.WriteAllText(tensorflowPath + "EvaluationData\\" + match.Match.BroadcastId + match.Match.GetFileName(false) + ".csv", outputCsv.ToString());
+                File.WriteAllText(_tensorflowPath + "EvaluationData\\" + match.Match.BroadcastId + match.Match.GetFileName(false) + ".csv", outputCsv.ToString());
             }
-
-            //TODO ensure test data and labels are of the same length.
 
             if (training)
             {
                 var trainingDataRaw = LoadTrainingData(match.Match);
 
-                var trainingData = DivideTrainingDataIntoTimeChunks(trainingDataRaw, secondsChunkSize);
+                var trainingData = DivideTrainingDataIntoTimeChunks(trainingDataRaw, _secondsChunkSize);
 
 
 
@@ -252,13 +217,13 @@ namespace HighlightGenerator
                 }
 
 
-                File.WriteAllText(tensorflowPath + "TrainingData\\" + match.Match.BroadcastId + match.Match.GetFileName(false) + "_training.csv", outputCsv.ToString());
+                File.WriteAllText(_tensorflowPath + "TrainingData\\" + match.Match.BroadcastId + match.Match.GetFileName(false) + "_training.csv", outputCsv.ToString());
             }
 
 
         }
 
-        private List<double> divideIntoTimeChunks(List<MatchMetric> metric, Match match, int secondsChunkSize)
+        private List<double> DivideIntoTimeChunks(List<MatchMetric> metric, int secondsChunkSize)
         {
             var output = new List<double>();
             bool endMet = false;
@@ -297,15 +262,13 @@ namespace HighlightGenerator
             return output;
         }
 
-        private List<double> divideChatIntoTimeChunks(List<MatchMetric> metric, Match match, int maxChunks)
+        private List<double> DivideChatIntoTimeChunks(List<MatchMetric> metric, int maxChunks)
         {
             if (metric == null)
             { return new List<double>();}
 
             var output = new List<double>();
-            bool endMet = false;
 
-            var itemsPerChunk = metric.Count / maxChunks;
             var timeRangeMin = metric[0].TimeStamp;
             var timeRangeMax = metric[metric.Count - 1].TimeStamp;
 
@@ -333,7 +296,7 @@ namespace HighlightGenerator
 
         private List<List<double>> LoadTrainingData(Match match)
         {
-            string filePath = tensorflowPath + "unprocessed\\" + match.BroadcastId + "_" + match.GetFileName(false) + ".txt";
+            string filePath = _tensorflowPath + "unprocessed\\" + match.BroadcastId + "_" + match.GetFileName(false) + ".txt";
             var text = File.ReadAllText(filePath);
 
             Regex pattern = new Regex("(\\d+\\.\\d+), (\\d+\\.\\d+)");
