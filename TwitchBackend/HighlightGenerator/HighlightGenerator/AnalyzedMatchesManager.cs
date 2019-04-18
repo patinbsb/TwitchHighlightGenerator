@@ -6,30 +6,43 @@ using Newtonsoft.Json;
 
 namespace HighlightGenerator
 {
+    /// <summary>
+    /// Responsible for maintaining a local offline reference to the matches the project has performed analysis on.
+    /// Ensures no unnecessary duplicated efforts are made by tracking state.
+    /// </summary>
     public static class AnalyzedMatchesManager
     {
+        // Reference to offline Json file location.
         private static readonly string AnalyzedMatchesPath = ConfigurationManager.AppSettings["AnalyzedMatchesPath"];
         private static readonly string AnalyzedMatchesJson = "AnalyzedMatches.json";
-        public static List<MatchMetrics> AnalyzedMatches { get; private set; } = new List<MatchMetrics>();
+        public static List<MatchMetricGroup> AnalyzedMatches { get; private set; } = new List<MatchMetricGroup>();
 
-        // Loads in the filteredMatch list file. If a text version exists it will use this first to avoid unnecessary processing.
+        /// <summary>
+        /// Loads in the filteredMatch list file. If a local analysis file exists it will use this first to avoid unnecessary processing.
+        /// </summary>
         public static void LoadFromFiles()
         {
+
             var filteredMatches = FilteredMatchesManager.FilteredMatches;
-            AnalyzedMatches = new List<MatchMetrics>();
+            AnalyzedMatches = new List<MatchMetricGroup>();
             var folders = Directory.GetDirectories(AnalyzedMatchesPath);
 
-            // LoadFromFiles.
+            // Go over each filtered match and look up their corresponding analysis files.
             foreach (var filteredMatch in filteredMatches)
             {
                 foreach (var folder in folders)
                 {
                     if (folder.Contains(filteredMatch.Broadcast.Id.ToString()))
                     {
+                        // Analysis files found.
                         var files = Directory.GetFiles(folder);
+
+                        // Go over each match and create a corresponding analysis object using the local analysis files.
+                        // If no file found, perform analysis and create an object from scratch (and a corresponding analysis file group.).
                         foreach (var match in filteredMatch.Matches)
                         {
-                            MatchMetrics metric;
+                            // Check everything requires exists.
+                            MatchMetricGroup metrics;
                             bool killsFound = false,
                                 turretsFound = false,
                                 ultimatesFound = false,
@@ -78,21 +91,26 @@ namespace HighlightGenerator
                                     }
                                 }
                             }
+                            // If one or more metrics missing, (re)generate analysis info.
                             if (!(ultimatesFound && killsFound && turretsFound && baronFound && dragonFound && inhibitorFound))
                             {
-                                metric = new MatchAnalyzer().AnalyzeMatch(match, filteredMatch);
+                                metrics = new MatchAnalyzer().AnalyzeMatch(match, filteredMatch);
                             }
+                            // Load analysis info from file.
                             else
                             {
-                                metric = new MatchAnalyzer().ParseMatch(killPath, ultimatePath, turretsPath, baronPath, dragonPath, inhibitorPath, match);
+                                metrics = new MatchAnalyzer().ParseMatch(killPath, ultimatePath, turretsPath, baronPath, dragonPath, inhibitorPath, match);
                             }
-                            AnalyzedMatches.Add(metric);
+                            AnalyzedMatches.Add(metrics);
                         }
                     }
                 }
             }
         }
 
+        /// <summary>
+        /// Saves the current state of Analyzed matches locally.
+        /// </summary>
         public static void SaveToJson()
         {
             File.WriteAllText(AnalyzedMatchesPath + AnalyzedMatchesJson, JsonConvert.SerializeObject(AnalyzedMatches));
@@ -102,7 +120,7 @@ namespace HighlightGenerator
         /// Adds analyzed match and saves a Json file locally.
         /// </summary>
         /// <param name="analyzedMatch"></param>
-        public static void AddAnalyzedMatch(MatchMetrics analyzedMatch)
+        public static void AddAnalyzedMatch(MatchMetricGroup analyzedMatch)
         {
             if (!AnalyzedMatches.Contains(analyzedMatch))
             {
@@ -119,7 +137,7 @@ namespace HighlightGenerator
         /// Adds analyzed matches and saves a Json file locally.
         /// </summary>
         /// <param name="matches"></param>
-        public static void AddAnalyzedMatches(List<MatchMetrics> matches)
+        public static void AddAnalyzedMatches(List<MatchMetricGroup> matches)
         {
             foreach (var match in matches)
             {
@@ -135,6 +153,13 @@ namespace HighlightGenerator
             File.WriteAllText(AnalyzedMatchesPath + AnalyzedMatchesJson, JsonConvert.SerializeObject(AnalyzedMatches));
         }
 
+        /// <summary>
+        /// Because each match is a collection of 1 or more segments, we can account for the time skipping between segments and get a true time offset value.
+        /// The offset value is with respect to the raw broadcast video file.
+        /// </summary>
+        /// <param name="videoTime"></param>
+        /// <param name="match"></param>
+        /// <returns></returns>
         private static double ConvertVideoTimeToMatchOffset(double videoTime, Match match)
         {
             var videoStart = match.Segments[0].StartTime;

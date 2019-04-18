@@ -75,7 +75,7 @@ namespace HighlightGenerator
             FilteredMatchesManager.AddFilteredMatches(filteredMatches);
 
             var matchAnalyzer = new MatchAnalyzer();
-            var matchCollection = new List<List<MatchMetrics>>();
+            var matchCollection = new List<List<MatchMetricGroup>>();
 
             Console.WriteLine("");
             Console.WriteLine("Analyzing matches.");
@@ -106,7 +106,7 @@ namespace HighlightGenerator
             Console.WriteLine("");
 
 
-            var deepLearner = new DeepLearner();
+            var deepLearner = new NeuralNetController();
             var highlightGenerator = new HighlightMaker();
 
             // Finally we generate a highlight for each discovered match we find.
@@ -120,6 +120,8 @@ namespace HighlightGenerator
                 }
             }
 
+            // Here all UnFiltered Broadcasts are Filtered, then all Analyzed Matches are Analyzed, then all untrained instant-replays are trained and all unpredicted matches are predicted.
+            // All Analyzed matches then have their corresponding highlight video rendered, available to the user to view.
             Console.WriteLine($"Processing complete: Go to {highlightVideosPath} to see highlight videos.");
             Console.WriteLine("Press any key to exit.");
             Console.ReadKey();

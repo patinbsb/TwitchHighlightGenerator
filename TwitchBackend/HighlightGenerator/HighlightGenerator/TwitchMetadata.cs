@@ -54,6 +54,37 @@ namespace HighlightGenerator
             return null;
         }
 
+        public TwitchVideo GetTwitchVideoFromDate(DateTime broadcastDate)
+        {
+            using (WebClient webClient = CreateTwitchWebClient())
+            {
+                try
+                {
+                    string result = webClient.DownloadString($"https://api.twitch.tv/kraken/videos/{id}");
+
+                    JObject videoJson = JObject.Parse(result);
+
+                    if (videoJson != null)
+                    {
+                        return ParseVideo(videoJson);
+                    }
+                }
+                catch (WebException ex)
+                {
+                    if (ex.Response is HttpWebResponse resp && resp.StatusCode == HttpStatusCode.NotFound)
+                    {
+                        return null;
+                    }
+                    else
+                    {
+                        throw;
+                    }
+                }
+            }
+
+            return null;
+        }
+
         public TwitchVideo ParseVideo(JObject videoJson)
         {
             string channel = videoJson.Value<JObject>("channel").Value<string>("display_name");

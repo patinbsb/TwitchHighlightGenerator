@@ -2,9 +2,12 @@
 
 namespace HighlightGenerator
 {
-    public class MatchMetrics
+    /// <summary>
+    /// Responsible for representing all the match metrics for a particular match.
+    /// </summary>
+    public class MatchMetricGroup
     {
-        public MatchMetrics(List<MatchMetric> killDifferences, List<MatchMetric> ultimateUsage, 
+        public MatchMetricGroup(List<MatchMetric> killDifferences, List<MatchMetric> ultimateUsage, 
             List<MatchMetric> turretKills, List<MatchMetric> baronKills, List<MatchMetric> dragonKills, 
             List<MatchMetric> inhibitorKills, List<MatchMetric> chatRate, Match match)
         {
@@ -18,7 +21,7 @@ namespace HighlightGenerator
             Match = match;
         }
 
-        public MatchMetrics(Match match)
+        public MatchMetricGroup(Match match)
         {
             KillDifferences = new List<MatchMetric>();
             UltimateUsage = new List<MatchMetric>();

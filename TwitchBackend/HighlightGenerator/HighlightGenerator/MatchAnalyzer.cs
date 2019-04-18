@@ -7,14 +7,26 @@ using System.Threading.Tasks;
 
 namespace HighlightGenerator
 {
+    /// <summary>
+    /// Responsible for analyzing the contents of the matches that a Broadcast is broken down into.
+    /// There are several tracked metrics that the Clip_Analyzer Python script will generate during analysis.
+    /// Can also load the files output previously analyzed matches from files into objects in memory.
+    /// </summary>
     public class MatchAnalyzer
     {
+        // Location of the script that performs our match analysis.
         public static string ClipAnalyzerScriptPath = Helper.ScriptsPath + "Clip_Analyzer.py";
 
+        // Used to track the progress of the 1 to many match analysis tasks that are currently processing.
         private readonly object _lockProgress = new object();
         private readonly List<Tuple<string, string>> _taskProgress = new List<Tuple<string, string>>();
 
-        public List<MatchMetrics> AnalyzeMatches(FilteredMatches filteredMatches)
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="filteredMatches"></param>
+        /// <returns></returns>
+        public List<MatchMetricGroup> AnalyzeMatches(FilteredMatches filteredMatches)
         {
             var broadcastDirectory = filteredMatches.GetDirectoryPath();
 
@@ -33,7 +45,7 @@ namespace HighlightGenerator
             Task.WaitAll(tasks.ToArray());
 
             int counter = 0;
-            List<MatchMetrics> matchMetrics = new List<MatchMetrics>();
+            List<MatchMetricGroup> matchMetrics = new List<MatchMetricGroup>();
             foreach (var filteredMatch in filteredMatches.Matches)
             {
                 var taskOutcome = tasks[counter].Result;
@@ -46,7 +58,7 @@ namespace HighlightGenerator
             return matchMetrics;
         }
 
-        public MatchMetrics AnalyzeMatch(Match match, FilteredMatches matches)
+        public MatchMetricGroup AnalyzeMatch(Match match, FilteredMatches matches)
         {
             var broadcastDirectory = matches.GetDirectoryPath();
             var matchPath = broadcastDirectory + match.GetFileName();
@@ -57,8 +69,8 @@ namespace HighlightGenerator
 
         private (string, string, string, string, string, string) RunAnalysisOnMatch(string matchPath, Match match)
         {
-            string videoFilterScriptPathParam = ConvertToPythonPath(ClipAnalyzerScriptPath);
-            string videoToProcessParam = ConvertToPythonPath(matchPath);
+            string videoFilterScriptPathParam = Helper.ConvertToPythonPath(ClipAnalyzerScriptPath);
+            string videoToProcessParam = Helper.ConvertToPythonPath(matchPath);
             var analyzedPath = matchPath.Remove(matchPath.LastIndexOf("\\", StringComparison.Ordinal) + 1);
             analyzedPath = analyzedPath.Replace("Broadcasts", "Analyzed Broadcasts");
             var killsPath = analyzedPath + match.GetFileName(false) + "_kills.txt";
@@ -73,9 +85,9 @@ namespace HighlightGenerator
             {
                 FileName = Helper.PythonInterpreterPath,
                 Arguments =
-                    $"\"{videoFilterScriptPathParam}\" \"{videoToProcessParam}\" \"{ConvertToPythonPath(killsPath)}\" " +
-                    $"\"{ConvertToPythonPath(ultimatesPath)}\" \"{ConvertToPythonPath(turretsPath)}\" \"{ConvertToPythonPath(baronPath)}\" " +
-                    $"\"{ConvertToPythonPath(dragonPath)}\" \"{ConvertToPythonPath(inhibitorPath)}\"",
+                    $"\"{videoFilterScriptPathParam}\" \"{videoToProcessParam}\" \"{Helper.ConvertToPythonPath(killsPath)}\" " +
+                    $"\"{Helper.ConvertToPythonPath(ultimatesPath)}\" \"{Helper.ConvertToPythonPath(turretsPath)}\" \"{Helper.ConvertToPythonPath(baronPath)}\" " +
+                    $"\"{Helper.ConvertToPythonPath(dragonPath)}\" \"{Helper.ConvertToPythonPath(inhibitorPath)}\"",
                 UseShellExecute = false,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true
@@ -135,7 +147,7 @@ namespace HighlightGenerator
             return (killsPath, ultimatesPath, turretsPath, baronPath, dragonPath, inhibitorPath);
         }
 
-        public MatchMetrics ParseMatch(string killsFilePath, string ultimateFilePath, string turretsFilePath, string baronFilePath, string dragonFilePath, string inhibitorFilePath, Match filteredMatch)
+        public MatchMetricGroup ParseMatch(string killsFilePath, string ultimateFilePath, string turretsFilePath, string baronFilePath, string dragonFilePath, string inhibitorFilePath, Match filteredMatch)
         {
 
             List<double> kills = new List<double>();
@@ -257,12 +269,7 @@ namespace HighlightGenerator
                 }
             }
 
-            return new MatchMetrics(killDifferences, ultimateUsage, turretKills, baronKills, dragonKills, inhibitorKills, chatRate, filteredMatch);
-        }
-
-        private string ConvertToPythonPath(string path)
-        {
-            return path.Replace(@"\", @"\\");
+            return new MatchMetricGroup(killDifferences, ultimateUsage, turretKills, baronKills, dragonKills, inhibitorKills, chatRate, filteredMatch);
         }
 
         public double ConvertVideoTimeToMatchOffset(double videoTime, Match match)

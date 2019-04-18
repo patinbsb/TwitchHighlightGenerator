@@ -6,13 +6,22 @@ using Newtonsoft.Json;
 
 namespace HighlightGenerator
 {
+    /// <summary>
+    /// Responsible for ensuring filtered matches are synchronized to their concrete file structure.
+    /// Maintains an offline Json file for loading previously filtered matches into memory.
+    /// </summary>
     public static class FilteredMatchesManager
     {
+        // Offline Json file path configuration.
         private static readonly string BroadcastPath = ConfigurationManager.AppSettings["BroadcastsPath"];
         private static readonly string FilteredMatchesJson = "FilteredMatches.json";
+
+        // Start with an empty filtered match list.
         public static List<FilteredMatches> FilteredMatches { get; set; } = new List<FilteredMatches>();
 
-        // Loads in the filteredMatch list file
+        /// <summary>
+        /// Loads in the FilteredMatches Json file to memory.
+        /// </summary>
         public static void LoadFromJson()
         {
             if (File.Exists(BroadcastPath + FilteredMatchesJson))
@@ -26,9 +35,16 @@ namespace HighlightGenerator
             }
         }
 
+        /// <summary>
+        /// Saves all FilteredMatches to Json.
+        /// </summary>
         public static void SaveToJson()
         {
-            File.WriteAllText(BroadcastPath + FilteredMatchesJson, JsonConvert.SerializeObject(FilteredMatches));
+            // Wont allow saving without loading.
+            if ((FilteredMatches.Count > 0))
+            {
+                File.WriteAllText(BroadcastPath + FilteredMatchesJson, JsonConvert.SerializeObject(FilteredMatches));
+            }
         }
 
         /// <summary>
@@ -37,6 +53,7 @@ namespace HighlightGenerator
         /// <param name="filteredMatch"></param>
         public static void AddFilteredMatch(FilteredMatches filteredMatch)
         {
+            // Ensure no duplicate objects exist.
             if (!FilteredMatches.Contains(filteredMatch))
             {
                 FilteredMatches.Add(filteredMatch);
@@ -56,6 +73,7 @@ namespace HighlightGenerator
         {
             foreach (var filteredMatch in filteredMatches)
             {
+                // Ensure no duplicate objects exist.
                 if (!FilteredMatches.Contains(filteredMatch))
                 {
                     FilteredMatches.Add(filteredMatch);
