@@ -74,7 +74,7 @@ namespace HighlightGenerator
                 Console.WriteLine($"Found unprocessed video: {video}");
 
                 // Extracting metadata from video filename
-                var videoInfo = video.Substring(video.LastIndexOf("\\", StringComparison.Ordinal)).Split('_');
+                var videoInfo = video.Substring(video.LastIndexOf("\\", StringComparison.Ordinal)+ 1).Split('_');
 
                 var recordedDate = videoInfo[0];
                 var recordedTime = videoInfo[1];
