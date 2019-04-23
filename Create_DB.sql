@@ -5,7 +5,7 @@ CREATE TABLE `chatlog` (
   `broadcastid` int(11) NOT NULL,
   `message` varchar(2000) NOT NULL,
   `date` datetime NOT NULL,
-  `username` varchar(255) NOT NULL,
+  `username` varchar(512) NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `id_UNIQUE` (`id`),
   KEY `idx_chatlog_date` (`date`)

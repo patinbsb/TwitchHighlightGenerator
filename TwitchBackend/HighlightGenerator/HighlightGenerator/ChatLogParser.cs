@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Configuration;
 using System.Data;
+using System.Diagnostics;
 using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -40,8 +41,8 @@ namespace HighlightGenerator
 
             // Each regex pattern corresponds to a subsection of the messages we find.
             Regex timeStampRegex = new Regex("\\d\\d\\d\\d-\\d\\d-\\d\\d \\d\\d:\\d\\d:\\d\\d");
-            Regex userNameRegex = new Regex("\\d\\d UTC\\] .*:");
-            Regex messageContentRegex = new Regex("\\d\\d UTC\\] .*: .*");
+            Regex userNameRegex = new Regex("\\d\\d UTC\\] ([^:]*): ");
+            Regex messageContentRegex = new Regex("\\d\\d UTC\\] [^:]*: (.*)");
 
             // Extract individual messages.
             var messagePattern = "\\[\\d\\d\\d\\d-\\d\\d-\\d\\d \\d\\d:\\d\\d:\\d\\d UTC\\] .*: .*";
@@ -67,16 +68,20 @@ namespace HighlightGenerator
                         continue;
                     }
 
-                    var userNameMatch = userNameRegex.Match(match.ToString());
-                    var messageContentMatch = messageContentRegex.Match(match.ToString());
+                    var userNameMatch = userNameRegex.Match(match.ToString()).Groups[1];
+                    var messageContentMatch = messageContentRegex.Match(match.ToString()).Groups[1];
                     // Trim out required regex pattern characters for username.
-                    string userName = userNameMatch.Value.Substring(8, (userNameMatch.Value.Length - 9));
+                    string userName = userNameMatch.Value;
+                    if (userName.Length > 200)
+                    {
+                        Console.Write("shit");
+                    }
                     string messageContent =
-                        messageContentMatch.Value.Substring(messageContentMatch.Value.IndexOf(':') + 2);
+                        messageContentMatch.Value;
 
                     // Our row insert we append to the large insert.
                     rows.Add($"({broadcast.Id}, '{MySqlHelper.EscapeString(messageContent.Replace("@", ""))}', '{timestampMatch.Value}', " +
-                             $"'{MySqlHelper.EscapeString(userName.Replace("@", " "))}')");
+                             $"'{MySqlHelper.EscapeString(userName.Replace("@", ""))}')");
                 }
                 else
                 {
