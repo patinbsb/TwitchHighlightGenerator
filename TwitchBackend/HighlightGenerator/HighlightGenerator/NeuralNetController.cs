@@ -315,7 +315,7 @@ namespace HighlightGenerator
         private List<double> DivideChatIntoTimeChunks(List<MatchMetric> metric, int maxChunks)
         {
             // Handling edge case when no Chat-log exists for a match.
-            if (metric == null)
+            if (metric == null || metric.Count == 0)
             { return new List<double>();}
 
             // Parse parameter setting.
