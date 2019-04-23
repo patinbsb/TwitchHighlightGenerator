@@ -153,11 +153,16 @@ def filter_video_by_template(video_to_process, output_path, filter_template='C:\
         if ret is False:
             cap.release()
             out.release()
-            # Rename output video to highlight + highlight_count
-            filename = 'highlight' + str(highlight_count)
+            if matched_ranges_to_total_seconds(matched_ranges) < seconds_minimum_match_length:
+                # Rename output video to highlight + highlight_count
+                filename = 'highlight' + str(highlight_count)
+            else:
+                # Rename output video to highlight + highlight_count
+                filename = 'match' + str(match_count)
+
             os.rename((output_path + default_output), output_path + filename + '.mp4')
             # Write out audio frames for future audio/video merging
-            if audio_segment_start is None:
+            if audio_segment_start is not None:
                 matched_ranges.append([convert_frame_to_seconds(audio_segment_start, fps),
                                           convert_frame_to_seconds(previous_matched_frame, fps)])
                 write_highlight_or_match_audio_segment_to_file(output_path + filename, matched_ranges)

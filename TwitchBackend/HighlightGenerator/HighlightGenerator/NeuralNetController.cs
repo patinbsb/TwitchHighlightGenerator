@@ -12,13 +12,13 @@ namespace HighlightGenerator
     /// <summary>
     /// Responsible for packaging instant-replays and matches for training the Tensorflow model and generating highlight predictions.
     /// </summary>
-    class NeuralNetController
+    public class NeuralNetController
     {
         // Configuring path locations.
         private readonly string _tensorflowPath = ConfigurationManager.AppSettings["TensorflowDataPath"];
         private readonly string _tensorflowPythonInterpreterPath =
             ConfigurationManager.AppSettings["TensorflowPythonInterpreterPath"];
-        private readonly string _deepLearnerScriptPath = ConfigurationManager.AppSettings["ScriptsPath"] + "DeepLearningModel.py";
+        private string _deepLearnerScriptPath = ConfigurationManager.AppSettings["ScriptsPath"] + "DeepLearningModel.py";
 
         // The time range that the Neural Network will operate in.
         private readonly int _secondsChunkSize = 1;
@@ -29,8 +29,13 @@ namespace HighlightGenerator
         /// </summary>
         /// <param name="matchMetricGroup"></param>
         /// <returns></returns>
-        public HighlightInfo GetHighlightPeriod(MatchMetricGroup matchMetricGroup)
+        public HighlightInfo GetHighlightPeriod(MatchMetricGroup matchMetricGroup, bool testConfiguration = false)
         {
+            if (testConfiguration)
+            {
+                _deepLearnerScriptPath = ConfigurationManager.AppSettings["AltScriptsPath"] + "DeepLearningModel.py";
+            }
+
             // Packages matchMetricGroup info into a chunked up form that Tensorflow can understand and creates a csv file for the Tensorflow python script to reference.
             var (matchPath, predictedDataPath) = PrepareMatchForTensorFlow(matchMetricGroup, false);
 

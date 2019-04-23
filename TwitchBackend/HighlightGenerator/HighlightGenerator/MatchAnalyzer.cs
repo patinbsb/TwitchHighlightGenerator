@@ -72,7 +72,7 @@ namespace HighlightGenerator
             string videoFilterScriptPathParam = Helper.ConvertToPythonPath(ClipAnalyzerScriptPath);
             string videoToProcessParam = Helper.ConvertToPythonPath(matchPath);
             var analyzedPath = matchPath.Remove(matchPath.LastIndexOf("\\", StringComparison.Ordinal) + 1);
-            analyzedPath = analyzedPath.Replace("Broadcasts", "Analyzed Broadcasts");
+            analyzedPath = analyzedPath.Replace("Broadcasts", "AnalyzedBroadcasts");
             var killsPath = analyzedPath + match.GetFileName(false) + "_kills.txt";
             var ultimatesPath = analyzedPath + match.GetFileName(false) + "_ultimates.txt";
             var turretsPath = analyzedPath + match.GetFileName(false) + "_turrets.txt";

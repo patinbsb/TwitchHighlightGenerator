@@ -162,4 +162,5 @@ def main(video_data_path, predicted_data_path):
 
 
 if __name__ == "__main__":
-    main(sys.argv[1], sys.argv[2])
+    main("317396487match1.csv", "317396487match1_prediction.csv")
+    #main(sys.argv[1], sys.argv[2])

@@ -7,7 +7,6 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
-
 namespace HighlightGenerator
 {
     /// <summary>
@@ -106,20 +105,9 @@ namespace HighlightGenerator
                 // Keep track of this broadcast by assigning a corresponding Broadcast object to it.
                 broadcasts.Add(new Broadcast(videoId, videoRecordedDateTime));
 
-                if (testConfiguration)
-                {
-                    // We put each filtered broadcast into its own test folder.
-                    Directory.CreateDirectory(Helper.BroadcastsPath + $"{videoId}");
-                    string outputPath = Helper.BroadcastsPath + $"{videoId}\\";
-                }
-                else
-                {
-                    // We put each filtered broadcast into its own folder.
-                    Directory.CreateDirectory(Helper.TestPath + "Broadcasts\\" + $"{videoId}");
-                    string outputPath = Helper.TestPath + "Broadcasts\\" + $"{videoId}\\";
-                }
-
-
+                // We put each filtered broadcast into its own test folder.
+                Directory.CreateDirectory(Helper.BroadcastsPath + $"{videoId}");
+                string outputPath = Helper.BroadcastsPath + $"{videoId}\\";
 
                 // Queue the broadcast filter operation for future parallel filtering.
                 videoFilterTasks.Add(new Task(() => FilterVideo(video, outputPath, FilterTemplatePath, FilterThreshold, StartingFrame,
@@ -135,7 +123,10 @@ namespace HighlightGenerator
             foreach (var broadcast in broadcasts)
             {
                 Console.WriteLine($"processing {broadcast.Id}'s chat-log");
-                ChatLogParser.GenerateChatRows(broadcast);
+                if (!testConfiguration)
+                {
+                    ChatLogParser.GenerateChatRows(broadcast);
+                }
             }
 
             Console.WriteLine("chat-log processing completed.");
@@ -308,9 +299,10 @@ namespace HighlightGenerator
         public List<FilteredMatches> BuildFilteredMatchesFromBroadcasts(List<Broadcast> broadcasts)
         {
             List<FilteredMatches> filteredMatches = new List<FilteredMatches>();
+            List<string> directories;
 
             // Each broadcast's containing folder.
-            var directories = Directory.EnumerateDirectories(Helper.BroadcastsPath).ToList();
+            directories = Directory.EnumerateDirectories(Helper.BroadcastsPath).ToList();
 
             // We go over each broadcast we filtered and look for the corresponding files the filter process generated.
             foreach (var broadcast in broadcasts)

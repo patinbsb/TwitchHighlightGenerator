@@ -22,12 +22,21 @@ namespace HighlightGenerator
         /// <param name="highlightInfo"></param>
         /// <param name="match"></param>
         /// <returns></returns>
-        public string CreateHighlight(HighlightInfo highlightInfo, Match match)
+        public string CreateHighlight(HighlightInfo highlightInfo, Match match, bool testConfiguration = false)
         {
             string videoToProcess = "";
+            string[] vodFiles;
 
-            // Find the Broadcast file.
-            var vodFiles = Directory.GetFiles(ProcessedVodsPath);
+            if (testConfiguration)
+            {
+                vodFiles = Directory.GetFiles(Helper.TwitchVodsPath);
+            }
+            else
+            {
+                // Find the Broadcast file.
+                vodFiles = Directory.GetFiles(ProcessedVodsPath);
+            }
+
             foreach (var vodFile in vodFiles)
             {
                 if (vodFile.Contains(match.BroadcastId.ToString()))
