@@ -72,10 +72,6 @@ namespace HighlightGenerator
                     var messageContentMatch = messageContentRegex.Match(match.ToString()).Groups[1];
                     // Trim out required regex pattern characters for username.
                     string userName = userNameMatch.Value;
-                    if (userName.Length > 200)
-                    {
-                        Console.Write("shit");
-                    }
                     string messageContent =
                         messageContentMatch.Value;
 
