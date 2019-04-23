@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
+
 namespace HighlightGenerator
 {
     /// <summary>
@@ -62,7 +63,7 @@ namespace HighlightGenerator
         /// </summary>
         /// <param name="videosToProcess"></param>
         /// <returns></returns>
-        public List<FilteredMatches> FilterBroadcasts(List<string> videosToProcess)
+        public List<FilteredMatches> FilterBroadcasts(List<string> videosToProcess, bool testConfiguration = false)
         {
 
             // We iterate over each VOD file, filter out gameplay, get their associated chat-log and create a metadata store in the form of a Broadcast list.
@@ -82,28 +83,43 @@ namespace HighlightGenerator
 
                 var videoId = int.Parse(videoInfo[2]);
 
-                // Check if the Broadcast has already been filtered. Skip this broadcast if true.
-                foreach (var filteredMatch in FilteredMatchesManager.FilteredMatches)
+                if (!testConfiguration)
                 {
-                    if (filteredMatch.Broadcast.Id == videoId)
+                    // Check if the Broadcast has already been filtered. Skip this broadcast if true.
+                    foreach (var filteredMatch in FilteredMatchesManager.FilteredMatches)
                     {
-                        Console.WriteLine(video + " has already been processed before, skipping.");
-                        skip = true;
-                        break;
+                        if (filteredMatch.Broadcast.Id == videoId)
+                        {
+                            Console.WriteLine(video + " has already been processed before, skipping.");
+                            skip = true;
+                            break;
+                        }
+                    }
+                    if (skip)
+                    {
+                        skip = false;
+                        continue;
                     }
                 }
-                if (skip)
-                {
-                    skip = false;
-                    continue;
-                }
+
 
                 // Keep track of this broadcast by assigning a corresponding Broadcast object to it.
                 broadcasts.Add(new Broadcast(videoId, videoRecordedDateTime));
 
-                // We put each filtered broadcast into its own folder.
-                Directory.CreateDirectory(Helper.BroadcastsPath + $"{videoId}");
-                string outputPath = Helper.BroadcastsPath + $"{videoId}\\";
+                if (testConfiguration)
+                {
+                    // We put each filtered broadcast into its own test folder.
+                    Directory.CreateDirectory(Helper.BroadcastsPath + $"{videoId}");
+                    string outputPath = Helper.BroadcastsPath + $"{videoId}\\";
+                }
+                else
+                {
+                    // We put each filtered broadcast into its own folder.
+                    Directory.CreateDirectory(Helper.TestPath + "Broadcasts\\" + $"{videoId}");
+                    string outputPath = Helper.TestPath + "Broadcasts\\" + $"{videoId}\\";
+                }
+
+
 
                 // Queue the broadcast filter operation for future parallel filtering.
                 videoFilterTasks.Add(new Task(() => FilterVideo(video, outputPath, FilterTemplatePath, FilterThreshold, StartingFrame,

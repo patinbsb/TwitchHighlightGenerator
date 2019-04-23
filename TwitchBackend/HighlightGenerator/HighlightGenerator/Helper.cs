@@ -23,6 +23,8 @@ namespace HighlightGenerator
         public static string PythonInterpreterPath = ConfigurationManager.AppSettings["PythonInterpreterPath"];
         // SQL connection string to gain database access.
         public static string MySqlConnection = ConfigurationManager.AppSettings["MySqlConnection"];
+        // Used for when a test needs to override locations.
+        public static string TestPath = ConfigurationManager.AppSettings["TestPath"];
 
         /// <summary>
         /// Prepares a path parameter for being passed into a python script.

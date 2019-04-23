@@ -20,6 +20,7 @@ namespace HighlightGenerator
                 rootPath = Directory.GetParent(rootPath).FullName;
             }
 
+            string testPath = rootPath + "\\TestData\\";
             rootPath += "\\";
             ConfigurationManager.AppSettings["RootPath"] = rootPath;
 
@@ -38,6 +39,7 @@ namespace HighlightGenerator
             ConfigurationManager.AppSettings["TensorflowDataPath"] = tensorflowDataPath;
             ConfigurationManager.AppSettings["HighlightVideosPath"] = highlightVideosPath;
             ConfigurationManager.AppSettings["FilterTemplatePath"] = scriptsPath + "broadcastFilterTemplate.png";
+            ConfigurationManager.AppSettings["TestPath"] = testPath;
 
             // Initialise existing broadcast data from previous sessions.
             FilteredMatchesManager.LoadFromJson();
